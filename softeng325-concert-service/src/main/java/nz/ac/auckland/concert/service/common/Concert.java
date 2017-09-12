@@ -8,15 +8,19 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
+import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
+import javax.persistence.MapKeyColumn;
+import javax.persistence.OneToMany;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -29,7 +33,7 @@ import nz.ac.auckland.concert.common.types.PriceBand;
 
 
 /**
- * Class to represent a Concert. A Concert is characterised by an unique ID, 
+ * Domain class to represent a Concert. A Concert is characterised by an unique ID, 
  * title, dates and time, ticket costs, and featuring Performers.
  * 
  * Concert implements Comparable with a natural ordering based on its title.
@@ -50,28 +54,35 @@ public class Concert implements Comparable<Concert> {
 	@Column( nullable= false )
 	private String _title;
 	
-	@Column( nullable= false )
+	@ElementCollection
 	@Convert(converter = LocalDateTimeAdapter.class)
 	private Set<LocalDateTime> _dates;
 	
+	@ElementCollection
+	@CollectionTable(name = "TARIFF" )
+	@MapKeyColumn( name = "PRICEBAND" )
+	@Column( name = "PRICEBANDS" )
 	private Map<PriceBand, BigDecimal> _tariff;
 	
-	@ManyToMany(cascade = { CascadeType.PERSIST,CascadeType.REMOVE} )
-	/*@JoinColumn()*/
+	@ManyToMany(mappedBy= "_concerts", cascade = { CascadeType.PERSIST,CascadeType.REMOVE} )
 	private Set<Performer> _performers;
 	
-	public Concert(Long id, String title, Set<LocalDateTime> dates, Map<PriceBand, BigDecimal> ticketPrices, Set<Performer> performers) {
+	@OneToMany(mappedBy="concert", cascade = {CascadeType.PERSIST,CascadeType.REMOVE})
+	private Set<Booking> _bookings;
+	
+	public Concert(Long id, String title, Set<LocalDateTime> dates, Map<PriceBand, BigDecimal> ticketPrices, Set<Performer> performers, Set<Booking> bookings) {
 		_id = id;
 		_title = title;
 		_dates = dates;
 		_tariff = new HashMap<PriceBand, BigDecimal>(ticketPrices);
 		_performers = performers;
+		_bookings = bookings;
 	}
 	
-	public Concert(String title, Set<LocalDateTime> date, Map<PriceBand, BigDecimal> ticketPrices, Set<Performer> performers) {
-		this(null, title, date, ticketPrices, performers);
+	public Concert(String title, Set<LocalDateTime> date, Map<PriceBand, BigDecimal> ticketPrices, Set<Performer> performers, Set<Booking> bookings) {
+		this(null, title, date, ticketPrices, performers, bookings);
 	}
-	
+
 	// Required for JPA and JAXB.
 	protected Concert() {}
 	
@@ -106,6 +117,18 @@ public class Concert implements Comparable<Concert> {
 	public Map<PriceBand, BigDecimal> getTariff() {
 		return _tariff;
 	}
+	
+	public void setTariff(Map<PriceBand, BigDecimal> Tariff) {
+		_tariff = Tariff;
+	}
+	
+	public Set<Booking> getBookings() {
+		return _bookings;
+	}
+	
+	public void setBookings(Set<Booking> bookings) {
+		_bookings = bookings;
+	}
 
 	@Override
 	public String toString() {
@@ -133,7 +156,7 @@ public class Concert implements Comparable<Concert> {
 	public boolean equals(Object obj) {
 		if (!(obj instanceof Concert))
             return false;
-        if (obj == this)
+        if (obj.equals(this))
             return true;
 
         Concert rhs = (Concert) obj;

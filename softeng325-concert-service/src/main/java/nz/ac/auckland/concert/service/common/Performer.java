@@ -1,10 +1,15 @@
 package nz.ac.auckland.concert.service.common;
 
+import java.util.Set;
+
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.ManyToMany;
+import javax.persistence.OneToMany;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -38,6 +43,9 @@ public class Performer {
 	
 	@Column( nullable= false )
 	private Genre _genre;
+	
+	@ManyToMany(cascade = { CascadeType.PERSIST,CascadeType.REMOVE} )
+	private Set<Concert> _concerts;
 	
 	public Performer(Long id, String name, String s3ImageUri, Genre genre) {
 		_id = id;
@@ -83,6 +91,14 @@ public class Performer {
 
 	public void setGenre(Genre genre) {
 		_genre = genre;
+	}
+	
+	public Set<Concert> getConcerts() {
+		return _concerts;
+	}
+	
+	public void setConcerts(Set<Concert> concerts) {
+		_concerts = concerts;
 	}
 	
 	@Override

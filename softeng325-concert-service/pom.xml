@@ -8,6 +8,8 @@
 	</parent>
 	<artifactId>softeng325-concert-service</artifactId>
 	
+	<packaging>war</packaging>
+	
 	<properties>
 		<servlet.container.port>10000</servlet.container.port>
 	</properties>
