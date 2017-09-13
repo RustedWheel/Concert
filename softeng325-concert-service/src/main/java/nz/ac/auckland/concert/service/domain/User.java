@@ -1,6 +1,9 @@
-package nz.ac.auckland.concert.service.common;
+package nz.ac.auckland.concert.service.domain;
+
+import java.util.Set;
 
 import javax.persistence.Column;
+import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -44,17 +47,25 @@ public class User {
 	@Column( nullable= false )
 	private String _lastname;
 	
+	@Embedded
+	private CreditCard _creditcard;
+	
 	protected User() {}
 	
-	public User(String username, String password, String lastname, String firstname) {
+	public User(String username, String password, String lastname, String firstname, CreditCard creditcard) {
 		_username = username;
 		_password = password;
 		_lastname = lastname;
 		_firstname = firstname;
+		_creditcard = creditcard;
+	}
+	
+	public User(String username, String password, String lastname, String firstname) {
+		this(username, password, lastname, firstname, null);
 	}
 	
 	public User(String username, String password) {
-		this(username, password, null, null);
+		this(username, password, null, null, null);
 	}
 	
 	public String getUsername() {
@@ -71,6 +82,14 @@ public class User {
 	
 	public String getLastname() {
 		return _lastname;
+	}
+	
+	public CreditCard getCreditcard() {
+		return _creditcard;
+	}
+	
+	public void setCreditcard(CreditCard creditcard) {
+		_creditcard = creditcard;
 	}
 	
 	@Override

@@ -1,4 +1,4 @@
-package nz.ac.auckland.concert.service.common;
+package nz.ac.auckland.concert.service.domain;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -30,6 +30,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import nz.ac.auckland.concert.common.jaxb.LocalDateTimeAdapter;
 import nz.ac.auckland.concert.common.types.PriceBand;
+import nz.ac.auckland.concert.service.domain.jpa.LocalDateTimeConverter;
 
 
 /**
@@ -55,7 +56,7 @@ public class Concert implements Comparable<Concert> {
 	private String _title;
 	
 	@ElementCollection
-	@Convert(converter = LocalDateTimeAdapter.class)
+	@Convert(converter = LocalDateTimeConverter.class)
 	private Set<LocalDateTime> _dates;
 	
 	@ElementCollection

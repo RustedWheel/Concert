@@ -1,10 +1,11 @@
-package nz.ac.auckland.concert.service.common;
+package nz.ac.auckland.concert.service.domain;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embeddable;
 import javax.persistence.Entity;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
@@ -56,7 +57,7 @@ public class Booking {
 	@ElementCollection
 	private Set<Seat> _seats;
 	
-	@Column( nullable= false )
+	@Enumerated
 	private PriceBand _priceBand;
 
 	public Booking() {

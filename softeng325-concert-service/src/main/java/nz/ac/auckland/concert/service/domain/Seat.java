@@ -1,4 +1,4 @@
-package nz.ac.auckland.concert.service.common;
+package nz.ac.auckland.concert.service.domain;
 
 import javax.persistence.Column;
 import javax.persistence.Embeddable;

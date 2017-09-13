@@ -4,8 +4,8 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
-import nz.ac.auckland.concert.service.common.Concert;
-import nz.ac.auckland.concert.service.common.Performer;
+import nz.ac.auckland.concert.service.domain.Concert;
+import nz.ac.auckland.concert.service.domain.Performer;
 
 /**
  * Helper class to convert between domain-model and DTO objects representing
