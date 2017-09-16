@@ -5,11 +5,13 @@ import java.util.Set;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
+import javax.persistence.Table;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -27,46 +29,54 @@ import nz.ac.auckland.concert.common.types.Genre;
  */
 
 @Entity
-@XmlRootElement
+@Table(name = "PERFORMERS")
+@XmlRootElement(name = "performer")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class Performer {
 
 	@Id
 	@GeneratedValue
-	private Long _id;
+	@Column( nullable = false, name = "PID" )
+	private Long _pid;
 
-	@Column( nullable= false )
+	@Column( nullable = false, name = "NAME" )
 	private String _name;
 	
-	@Column( nullable= false )
-	private String _s3ImageUri;
+	@Column( nullable = false, name = "IMAGE_NAME" )
+	private String _imageName;
 	
-	@Column( nullable= false )
+	@Enumerated(EnumType.STRING)
+	@Column( nullable= false, name = "GENRE"  )
 	private Genre _genre;
 	
-	@ManyToMany(cascade = { CascadeType.PERSIST,CascadeType.REMOVE} )
+	@ManyToMany(mappedBy = "_performers")
 	private Set<Concert> _concerts;
 	
-	public Performer(Long id, String name, String s3ImageUri, Genre genre) {
-		_id = id;
+	public Performer(Long id, String name, String imageName, Genre genre, Set<Concert> concerts) {
+		_pid = id;
 		_name = name;
-		_s3ImageUri = s3ImageUri;
+		_imageName = imageName;
 		_genre = genre;
+		_concerts = concerts;
 	}
 	
-	public Performer(String name, String s3ImageUri, Genre genre) {
-		this(null, name, s3ImageUri, genre);
+	public Performer(Long id, String name, String imageName, Genre genre) {
+		this(id, name, imageName, genre, null);
+	}
+	
+	public Performer(String name, String imageName, Genre genre) {
+		this(null, name, imageName, genre, null);
 	}
 	
 	// Required for JPA and JAXB.
 	protected Performer() {}
 	
 	public Long getId() {
-		return _id;
+		return _pid;
 	}
 	
 	public void setId(Long id) {
-		_id = id;
+		_pid = id;
 	}
 
 	public String getName() {
@@ -77,12 +87,12 @@ public class Performer {
 		_name = name;
 	}
 
-	public String getS3ImageUri() {
-		return _s3ImageUri;
+	public String getImageName() {
+		return _imageName;
 	}
 
-	public void setS3ImageUri(String s3ImageUri) {
-		_s3ImageUri = s3ImageUri;
+	public void setImageName(String imageName) {
+		_imageName = imageName;
 	}
 
 	public Genre getGenre() {
@@ -97,6 +107,10 @@ public class Performer {
 		return _concerts;
 	}
 	
+	public void addConcert(Concert concert) {
+		_concerts.add(concert);
+	}
+	
 	public void setConcerts(Set<Concert> concerts) {
 		_concerts = concerts;
 	}
@@ -105,11 +119,11 @@ public class Performer {
 	public String toString() {
 		StringBuffer buffer = new StringBuffer();
 		buffer.append("Performer, id: ");
-		buffer.append(_id);
+		buffer.append(_pid);
 		buffer.append(", name: ");
 		buffer.append(_name);
 		buffer.append(", s3 image: ");
-		buffer.append(_s3ImageUri);
+		buffer.append(_imageName);
 		buffer.append(", genre: ");
 		buffer.append(_genre.toString());
 		
@@ -127,7 +141,7 @@ public class Performer {
         return new EqualsBuilder().
             append(_name, rhs.getName()).
             append(_genre, rhs.getGenre()).
-            append(_s3ImageUri, rhs.getS3ImageUri()).
+            append(_imageName, rhs.getImageName()).
             isEquals();
 	}
 	

@@ -5,6 +5,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -24,12 +29,23 @@ import nz.ac.auckland.concert.common.types.PriceBand;
  *                 same price band).
  *
  */
+
+@XmlAccessorType(XmlAccessType.FIELD)
 public class BookingDTO {
 
+	@XmlElement(name="concertId")
 	private Long _concertId;
+	
+	@XmlElement(name="concertTitle")
 	private String _concertTitle;
+	
+	@XmlElement(name="dateTime")
 	private LocalDateTime _dateTime;
+	
+	@XmlElement(name="seats")
 	private Set<SeatDTO> _seats;
+	
+	@XmlElement(name="priceBand")
 	private PriceBand _priceBand;
 
 	public BookingDTO() {

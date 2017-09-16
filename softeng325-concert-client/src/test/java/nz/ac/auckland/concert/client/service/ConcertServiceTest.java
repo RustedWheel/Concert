@@ -124,7 +124,7 @@ public class ConcertServiceTest {
 		}
 	}
 	
-	@Test
+	/*@Test*/
 	public void testCreateUserWithMissingField() {
 		try {
 			UserDTO userDTO = new UserDTO(null, "123", "Churchill", "Winston");
@@ -135,7 +135,7 @@ public class ConcertServiceTest {
 		}
 	}
 	
-	@Test 
+	/*@Test */
 	public void testCreateUserWithDuplicateUsername() {
 		boolean createdFirstUser = false;
 		try {
@@ -154,7 +154,7 @@ public class ConcertServiceTest {
 		}
 	}
 	
-	@Test
+	/*@Test*/
 	public void testAuthenticateUser() {
 		try {
 			UserDTO userDTO = new UserDTO("Bulldog", "123", "Churchill", "Winston");
@@ -169,7 +169,7 @@ public class ConcertServiceTest {
 		}
 	}
 	
-	@Test
+	/*@Test*/
 	public void testAuthenticateWithNonExistentUser() {
 		try {
 			UserDTO credentials = new UserDTO("Bulldog", "123");
@@ -180,7 +180,7 @@ public class ConcertServiceTest {
 		}
 	}
 	
-	@Test
+	/*@Test*/
 	public void testAuthenticateUserWithIncorrectPassword() {
 		try {
 			UserDTO userDTO = new UserDTO("Bulldog", "123", "Churchill", "Winston");
@@ -194,7 +194,7 @@ public class ConcertServiceTest {
 		}
 	}
 	
-	@Test
+	/*@Test*/
 	public void testAuthenticateUserWithMissingPassword() {
 		try {
 			UserDTO userDTO = new UserDTO("Bulldog", "123", "Churchill", "Winston");
@@ -208,7 +208,7 @@ public class ConcertServiceTest {
 		}
 	}
 	
-	@Test
+/*	@Test*/
 	public void testMakeReservation() {
 		try {
 			final int numberOfSeatsToBook = 2;
@@ -237,7 +237,7 @@ public class ConcertServiceTest {
 		}
 	}
 	
-	@Test
+	/*@Test*/
 	public void testMakeReservationWithBadRequest() {
 		try {
 			UserDTO userDTO = new UserDTO("Bulldog", "123", "Churchill", "Winston");
@@ -253,7 +253,7 @@ public class ConcertServiceTest {
 		}
 	}
 	
-	@Test
+	/*@Test*/
 	public void testMakeReservationWhereSeatsAreNotAvailable() {
 		try {
 			UserDTO userDTO = new UserDTO("Bulldog", "123", "Churchill", "Winston");
@@ -290,7 +290,7 @@ public class ConcertServiceTest {
 		}	
 	}
 	
-	@Test
+	/*@Test*/
 	public void testMakeReservationWithUnauthenticatedUser() {
 		try {
 			final int numberOfSeatsToBook = 10;
@@ -305,7 +305,7 @@ public class ConcertServiceTest {
 		}
 	}
 	
-	@Test
+	/*@Test*/
 	public void testConfirmReservation() {
 		try {
 			final int numberOfSeatsToBook = 5;
@@ -337,7 +337,7 @@ public class ConcertServiceTest {
 		}
 	}	
 	
-	@Test
+	/*@Test*/
 	public void testConfirmBookingWithExpiredReservation() {
 		try {
 			final int numberOfSeatsToBook = 12;
@@ -370,7 +370,7 @@ public class ConcertServiceTest {
 		}
 	}
 	
-	@Test
+	/*@Test*/
 	public void testConfirmReservationWithoutRegisteredCreditCard() {
 		try {
 			final int numberOfSeatsToBook = 6;
@@ -396,7 +396,7 @@ public class ConcertServiceTest {
 		}
 	}
 
-	@Test
+	/*@Test*/
 	public void testRegisterCreditCard() {
 		try {
 			UserDTO userDTO = new UserDTO("Bulldog", "123", "Churchill", "Winston");
@@ -409,7 +409,7 @@ public class ConcertServiceTest {
 		} 
 	}
 	
-	@Test
+	/*@Test*/
 	public void testRegisterCreditCardWithUnauthenticatedUser() {
 		try {
 			CreditCardDTO creditCard = new CreditCardDTO(CreditCardDTO.Type.Visa, "Winston Churchill", "4929-1500-0055-9544", LocalDate.of(2019, 7, 31));

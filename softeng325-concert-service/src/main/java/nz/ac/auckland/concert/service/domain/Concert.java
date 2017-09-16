@@ -14,13 +14,19 @@ import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
+import javax.persistence.MapKeyClass;
 import javax.persistence.MapKeyColumn;
+import javax.persistence.MapKeyEnumerated;
 import javax.persistence.OneToMany;
+import javax.persistence.Table;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -44,40 +50,52 @@ import nz.ac.auckland.concert.service.domain.jpa.LocalDateTimeConverter;
  */
 
 @Entity
-@XmlRootElement
+@Table(name = "CONCERTS")
+@XmlRootElement(name = "concert")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class Concert implements Comparable<Concert> {
 
 	@Id
 	@GeneratedValue
-	private Long _id;
+	@Column(nullable = false, name = "CID")
+	private Long _cid;
 	
-	@Column( nullable= false )
+	@Column(nullable = false, name = "TITLE")
 	private String _title;
 	
 	@ElementCollection
+	@CollectionTable(name = "CONCERT_DATES",joinColumns= @JoinColumn( name = "CID" ) )
+	@Column( name = "DATE" )
 	@Convert(converter = LocalDateTimeConverter.class)
 	private Set<LocalDateTime> _dates;
 	
 	@ElementCollection
-	@CollectionTable(name = "TARIFF" )
-	@MapKeyColumn( name = "PRICEBAND" )
-	@Column( name = "PRICEBANDS" )
+	@CollectionTable(name = "CONCERT_TARIFS" )
+	@MapKeyColumn( name = "PRICEBANDS" )
+	@MapKeyClass(PriceBand.class)
+	@MapKeyEnumerated(EnumType.STRING)
+	@Column( name = "TICKET_PRICES" )
 	private Map<PriceBand, BigDecimal> _tariff;
-	
-	@ManyToMany(mappedBy= "_concerts", cascade = { CascadeType.PERSIST,CascadeType.REMOVE} )
+	 
+	@ManyToMany
+	@JoinTable(name="CONCERT_PERFORMER", joinColumns= @JoinColumn(name = "CID"),inverseJoinColumns= @JoinColumn(name = "PID"))
+	@Column(name = "PERFORMER_ID")
 	private Set<Performer> _performers;
 	
 	@OneToMany(mappedBy="concert", cascade = {CascadeType.PERSIST,CascadeType.REMOVE})
 	private Set<Booking> _bookings;
 	
 	public Concert(Long id, String title, Set<LocalDateTime> dates, Map<PriceBand, BigDecimal> ticketPrices, Set<Performer> performers, Set<Booking> bookings) {
-		_id = id;
+		_cid = id;
 		_title = title;
 		_dates = dates;
 		_tariff = new HashMap<PriceBand, BigDecimal>(ticketPrices);
 		_performers = performers;
 		_bookings = bookings;
+	}
+	
+	public Concert(Long id, String title, Set<LocalDateTime> date, Map<PriceBand, BigDecimal> ticketPrices, Set<Performer> performers) {
+		this(id, title, date, ticketPrices, performers, null);
 	}
 	
 	public Concert(String title, Set<LocalDateTime> date, Map<PriceBand, BigDecimal> ticketPrices, Set<Performer> performers, Set<Booking> bookings) {
@@ -88,11 +106,11 @@ public class Concert implements Comparable<Concert> {
 	protected Concert() {}
 	
 	public Long getId() {
-		return _id;
+		return _cid;
 	}
 	
 	public void setId(Long id) {
-		_id = id;
+		_cid = id;
 	}
 
 	public String getTitle() {
@@ -115,11 +133,11 @@ public class Concert implements Comparable<Concert> {
 		return _performers;
 	}
 	
-	public Map<PriceBand, BigDecimal> getTariff() {
+	public Map<PriceBand, BigDecimal> getTicketPrice() {
 		return _tariff;
 	}
 	
-	public void setTariff(Map<PriceBand, BigDecimal> Tariff) {
+	public void setTicketPrice(Map<PriceBand, BigDecimal> Tariff) {
 		_tariff = Tariff;
 	}
 	
@@ -135,7 +153,7 @@ public class Concert implements Comparable<Concert> {
 	public String toString() {
 		StringBuffer buffer = new StringBuffer();
 		buffer.append("Concert, id: ");
-		buffer.append(_id);
+		buffer.append(_cid);
 		buffer.append(", title: ");
 		buffer.append(_title);
 		buffer.append(", date: ");

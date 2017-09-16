@@ -1,9 +1,11 @@
 package nz.ac.auckland.concert.service.domain;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.Table;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -12,6 +14,8 @@ import java.time.LocalDateTime;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+
+import nz.ac.auckland.concert.service.domain.jpa.LocalDateTimeConverter;
 
 
 /**
@@ -27,30 +31,33 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
  */
 
 @Entity
-@XmlRootElement
+@Table(name = "NEWSITEM")
+@XmlRootElement(name = "newsItem")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class NewsItem {
 	
 	@Id
 	@GeneratedValue
-	private Long _id;
+	@Column( nullable = false, name = "ID" )
+	private Long _niid;
 	
-	@Column( nullable= false )
+	@Column(nullable = false, name = "TIMESTAMP")
+	@Convert(converter = LocalDateTimeConverter.class)
 	private LocalDateTime _timestamp;
 	
-	@Column( nullable= false )
+	@Column(nullable = false, name = "CONTENT")
 	private String _content;
 	
 	public NewsItem() {}
 	
 	public NewsItem(Long id, LocalDateTime timestamp, String content) {
-		_id = id;
+		_niid = id;
 		_timestamp = timestamp;
 		_content = content;
 	}
 	
 	public Long getId() {
-		return _id;
+		return _niid;
 	}
 	
 	public LocalDateTime getTimetamp() {

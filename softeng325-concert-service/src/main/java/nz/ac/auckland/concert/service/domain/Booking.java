@@ -1,10 +1,13 @@
 package nz.ac.auckland.concert.service.domain;
 
 import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embeddable;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -12,6 +15,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.Table;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -25,6 +29,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import nz.ac.auckland.concert.common.types.PriceBand;
+import nz.ac.auckland.concert.service.domain.jpa.LocalDateTimeConverter;
 
 /**
  * Domain class to represent bookings (confirmed reservations). 
@@ -40,24 +45,30 @@ import nz.ac.auckland.concert.common.types.PriceBand;
  */
 
 @Entity
+@Table(name = "BOOKINGS")
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
 public class Booking {
 	
 	@Id
 	@GeneratedValue
-	private Long _id;
+	@Column( nullable= false, name="BID")
+	private Long _bid;
 	
 	@ManyToOne
 	private Concert concert;
 	
-	@Column( nullable= false )
+	@Column( nullable= false, name = "DATE" )
+	@Convert(converter = LocalDateTimeConverter.class)
 	private LocalDateTime _dateTime;
 	
 	@ElementCollection
+	@CollectionTable(name = "BOOKING_SEATS",joinColumns= @JoinColumn( name = "BID" ) )
+	@Column( name = "SEAT" )
 	private Set<Seat> _seats;
 	
-	@Enumerated
+	@Enumerated(EnumType.STRING)
+	@Column( nullable= false, name = "PRICEBAND" )
 	private PriceBand _priceBand;
 
 	public Booking() {

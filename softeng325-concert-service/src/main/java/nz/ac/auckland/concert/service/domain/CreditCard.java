@@ -5,12 +5,14 @@ import java.time.LocalDate;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Embeddable;
+import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import nz.ac.auckland.concert.common.jaxb.LocalDateAdapter;
+import nz.ac.auckland.concert.service.domain.jpa.LocalDateTimeConverter;
 
 /**
  * DTO class to represent credit cards. 
@@ -28,7 +30,7 @@ public class CreditCard {
 	
 	public enum Type {Visa, Master};
 	
-	@Enumerated
+	@Enumerated(EnumType.STRING)
 	private Type _type;
 	
 	@Column(nullable = false, name = "NAME")
@@ -38,7 +40,7 @@ public class CreditCard {
 	private String _number;
 	
 	@Column(nullable = false, name = "EXPIRY_DATE")
-	@Convert(converter = LocalDateAdapter.class)
+	@Convert(converter = LocalDateTimeConverter.class)
 	private LocalDate _expiryDate;
 	
 	public CreditCard() {}

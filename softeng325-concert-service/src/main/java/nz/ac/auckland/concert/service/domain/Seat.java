@@ -1,6 +1,7 @@
 package nz.ac.auckland.concert.service.domain;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Embeddable;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -8,6 +9,8 @@ import javax.persistence.Id;
 
 import nz.ac.auckland.concert.common.types.SeatNumber;
 import nz.ac.auckland.concert.common.types.SeatRow;
+import nz.ac.auckland.concert.service.domain.jpa.LocalDateTimeConverter;
+import nz.ac.auckland.concert.service.domain.jpa.SeatNumberConverter;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -24,10 +27,12 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 @Embeddable
 public class Seat {
 
-	@Column( nullable= false )
+	
+	@Column( nullable= false, name = "ROW" )
 	private SeatRow _row;
 	
-	@Column( nullable= false )
+	@Column( nullable= false, name = "NUMBER" )
+	@Convert(converter = SeatNumberConverter.class)
 	private SeatNumber _number;
 	
 	public Seat() {}

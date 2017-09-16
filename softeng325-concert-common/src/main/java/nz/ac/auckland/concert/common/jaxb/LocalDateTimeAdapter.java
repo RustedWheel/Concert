@@ -2,6 +2,7 @@ package nz.ac.auckland.concert.common.jaxb;
 
 import java.time.LocalDateTime;
 
+import javax.persistence.Converter;
 import javax.xml.bind.annotation.adapters.XmlAdapter;
 
 
@@ -15,6 +16,8 @@ import javax.xml.bind.annotation.adapters.XmlAdapter;
  * 8).
  *
  */
+
+@Converter(autoApply=true)
 public class LocalDateTimeAdapter extends XmlAdapter<String, LocalDateTime> {
 
 	@Override

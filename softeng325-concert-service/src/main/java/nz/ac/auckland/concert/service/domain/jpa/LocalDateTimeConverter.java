@@ -16,7 +16,7 @@ import javax.persistence.Converter;
  * queries would not be able to be expressed in terms of date/time.
  *
  */
-@Converter
+@Converter(autoApply=true)
 public class LocalDateTimeConverter implements AttributeConverter<LocalDateTime, Timestamp> {
 	
     @Override
