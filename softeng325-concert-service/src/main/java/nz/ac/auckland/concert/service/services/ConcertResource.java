@@ -91,7 +91,7 @@ public class ConcertResource {
 	}
 	
 	@POST
-	@Consumes(javax.ws.rs.core.MediaType.APPLICATION_XML)
+	/*@Consumes(javax.ws.rs.core.MediaType.APPLICATION_XML)*/
 	public Response createUser(nz.ac.auckland.concert.common.dto.UserDTO dtoUser /*@CookieParam("clientId") Cookie clientId*/) {
 
 		User user = UserMapper.toDomainModel(dtoUser);

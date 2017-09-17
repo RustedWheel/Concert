@@ -182,13 +182,16 @@ public class Concert implements Comparable<Concert> {
         return new EqualsBuilder().
             append(_title, rhs.getTitle()).
             append(_dates, rhs.getDates()).
+            append(_tariff, rhs.getTicketPrice()).
             isEquals();
 	}
 	
 	@Override
 	public int hashCode() {
 		return new HashCodeBuilder(17, 31). 
-	            append(_title).hashCode();
+	            append(_title).
+	            append(_dates).
+	            append(_tariff).hashCode();
 	}
 
 	@Override

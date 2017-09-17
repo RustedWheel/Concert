@@ -47,16 +47,6 @@ public class DefaultService implements ConcertService {
 		Set<ConcertDTO> concertDTOs = new HashSet<ConcertDTO>();
 
 		Response response = _client.target(WEB_SERVICE_URI).request().get();
-		
-		/*Builder builder = _client.target(WEB_SERVICE_URI).request()
-				.accept(MediaType.APPLICATION_XML);*/
-
-		// Make the service invocation via a HTTP GET message, and wait for
-		// the response.
-		/*response = builder.get();*/
-
-		// Check that the HTTP response code is 200 OK.
-		int responseCode = response.getStatus();
 
 		// Check that the expected Concert is returned.
 		concertDTOs = new HashSet<ConcertDTO>(response.readEntity(new GenericType<List<nz.ac.auckland.concert.common.dto.ConcertDTO>>(){}));
@@ -71,9 +61,6 @@ public class DefaultService implements ConcertService {
 		Set<PerformerDTO> PerformerDTOs = new HashSet<PerformerDTO>();
 
 		Response response = _client.target(WEB_SERVICE_URI + "/allPerformers").request().get();
-
-		// Check that the HTTP response code is 200 OK.
-		int responseCode = response.getStatus();
 
 		// Check that the expected Concert is returned.
 		PerformerDTOs = new HashSet<PerformerDTO>(response.readEntity(new GenericType<List<nz.ac.auckland.concert.common.dto.PerformerDTO>>(){}));

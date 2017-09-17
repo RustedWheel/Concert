@@ -148,6 +148,9 @@ public class Performer {
 	@Override
 	public int hashCode() {
 		return new HashCodeBuilder(17, 31). 
-	            append(_name).hashCode();
+	            append(_name).
+	            append(_imageName).
+	            append(_genre).
+	            hashCode();
 	}
 }
