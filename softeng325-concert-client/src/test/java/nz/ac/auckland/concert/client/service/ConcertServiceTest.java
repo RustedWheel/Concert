@@ -135,7 +135,7 @@ public class ConcertServiceTest {
 		}
 	}
 	
-	/*@Test*/
+	@Test
 	public void testCreateUserWithDuplicateUsername() {
 		boolean createdFirstUser = false;
 		try {
@@ -154,7 +154,7 @@ public class ConcertServiceTest {
 		}
 	}
 	
-	/*@Test*/
+	@Test
 	public void testAuthenticateUser() {
 		try {
 			UserDTO userDTO = new UserDTO("Bulldog", "123", "Churchill", "Winston");
@@ -169,7 +169,7 @@ public class ConcertServiceTest {
 		}
 	}
 	
-	/*@Test*/
+	@Test
 	public void testAuthenticateWithNonExistentUser() {
 		try {
 			UserDTO credentials = new UserDTO("Bulldog", "123");
@@ -180,7 +180,7 @@ public class ConcertServiceTest {
 		}
 	}
 	
-	/*@Test*/
+	@Test
 	public void testAuthenticateUserWithIncorrectPassword() {
 		try {
 			UserDTO userDTO = new UserDTO("Bulldog", "123", "Churchill", "Winston");
@@ -194,7 +194,7 @@ public class ConcertServiceTest {
 		}
 	}
 	
-	/*@Test*/
+	@Test
 	public void testAuthenticateUserWithMissingPassword() {
 		try {
 			UserDTO userDTO = new UserDTO("Bulldog", "123", "Churchill", "Winston");

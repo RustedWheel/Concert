@@ -43,7 +43,7 @@ public class DefaultService implements ConcertService {
 
 	private static String WEB_SERVICE_URI = "http://localhost:10000/services/concerts";
 	
-	private static Set<String> _cookieValues = new HashSet<String>();
+	private static String _cookieValues;
 
 	@Override
 	public Set<ConcertDTO> getConcerts() throws ServiceException {
@@ -55,9 +55,18 @@ public class DefaultService implements ConcertService {
 		Builder builder = client.target(WEB_SERVICE_URI).request();
 		addCookieToInvocation(builder);
 		Response response = builder.get();
+		
+		switch (response.getStatus()){
+		case 400:
+				String errorMessage = response.readEntity (String.class);
+				System.out.println("UNAUTHORIZED ACCESS");
+				throw new ServiceException(errorMessage);
+		case 200: 
+				concertDTOs = new HashSet<ConcertDTO>(response.readEntity(new GenericType<List<nz.ac.auckland.concert.common.dto.ConcertDTO>>(){}));
+				break;
+		}
 
 		// Check that the expected Concert is returned.
-		concertDTOs = new HashSet<ConcertDTO>(response.readEntity(new GenericType<List<nz.ac.auckland.concert.common.dto.ConcertDTO>>(){}));
 
 		response.close();
 		client.close();
@@ -75,7 +84,7 @@ public class DefaultService implements ConcertService {
 		Builder builder = client.target(WEB_SERVICE_URI + "/performers").request();
 		addCookieToInvocation(builder);
 		Response response = builder.get();
-
+		
 		// Check that the expected Concert is returned.
 		PerformerDTOs = new HashSet<PerformerDTO>(response.readEntity(new GenericType<List<nz.ac.auckland.concert.common.dto.PerformerDTO>>(){}));
 
@@ -89,16 +98,18 @@ public class DefaultService implements ConcertService {
 	public UserDTO createUser(UserDTO newUser) throws ServiceException {
 		
 		Client client = ClientBuilder.newClient();
-		
+			
 		Response response = client
 				.target(WEB_SERVICE_URI + "/users").request()
 				.post(Entity.xml(newUser));
 		
 		switch (response.getStatus()){
-		case 400:{
+		case 400:
 				String errorMessage = response.readEntity (String.class);
 				throw new ServiceException(errorMessage);
-			 }
+		case 201: 
+				System.out.println("Successfully creatd");
+				break;
 		}
 		
 		processCookieFromResponse(response);
@@ -111,8 +122,28 @@ public class DefaultService implements ConcertService {
 
 	@Override
 	public UserDTO authenticateUser(UserDTO user) throws ServiceException {
-		// TODO Auto-generated method stub
-		return null;
+		
+		Client client = ClientBuilder.newClient();
+		
+		Builder builder = client.target(WEB_SERVICE_URI + "/authenticate").request();
+		Response response = builder.post(Entity.xml(user));
+		
+		switch (response.getStatus()){
+		case 400:
+				String errorMessage = response.readEntity (String.class);
+				throw new ServiceException(errorMessage);
+		case 200: 
+				System.out.println("Authentication success");
+				user = response.readEntity(UserDTO.class);
+				break;
+		}
+		
+		processCookieFromResponse(response);
+		
+		response.close();
+		client.close();
+		
+		return user;
 	}
 
 	@Override
@@ -157,8 +188,8 @@ public class DefaultService implements ConcertService {
 	}
 
 	private void addCookieToInvocation(Builder builder) {
-		if(!_cookieValues.isEmpty()) {
-			builder.cookie(Config.CLIENT_COOKIE, _cookieValues.iterator().next());
+		if(_cookieValues != null) {
+			builder.cookie(Config.CLIENT_COOKIE, _cookieValues);
 		}
 	}
 	
@@ -167,7 +198,7 @@ public class DefaultService implements ConcertService {
 		
 		if(cookies.containsKey(Config.CLIENT_COOKIE)) {
 			String cookieValue = cookies.get(Config.CLIENT_COOKIE).getValue();
-			_cookieValues.add(cookieValue);
+			_cookieValues = cookieValue;
 		}
 	}
 }

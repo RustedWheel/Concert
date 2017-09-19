@@ -36,10 +36,6 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 @XmlRootElement(name = "user")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class User {
-
-	/*@Id
-	@GeneratedValue
-	private Long _id;*/
 	
 	@Id
 	@Column( nullable= false, name = "USERNAME" )

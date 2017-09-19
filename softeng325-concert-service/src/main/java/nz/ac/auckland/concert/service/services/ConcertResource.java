@@ -11,6 +11,7 @@ import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.CookieParam;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -24,6 +25,7 @@ import javax.ws.rs.core.Response.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import nz.ac.auckland.concert.common.dto.UserDTO;
 import nz.ac.auckland.concert.common.message.Messages;
 import nz.ac.auckland.concert.service.common.Config;
 import nz.ac.auckland.concert.service.domain.Concert;
@@ -43,9 +45,19 @@ public class ConcertResource {
 	@GET
 	@Produces(javax.ws.rs.core.MediaType.APPLICATION_XML)
 	public Response retrieveConcerts(@CookieParam("clientUsername") Cookie token) {
-
-/*		if(token == null || !token.getName().equals(Config.CLIENT_COOKIE)){
-			throw new ServiceException(Messages.SERVICE_COMMUNICATION_ERROR);
+		
+/*		if(token == null || _token == null){
+			throw new NotAuthorizedException(Response
+					.status (Status.UNAUTHORIZED)
+					.entity (Messages.UNAUTHENTICATED_REQUEST)
+					.build());
+		}
+		
+		if(!token.getName().equals(Config.CLIENT_COOKIE) || !token.getValue().equals(_token.getValue())){
+			throw new NotAuthorizedException(Response
+					.status (Status.UNAUTHORIZED)
+					.entity (Messages.BAD_AUTHENTICATON_TOKEN)
+					.build());
 		}*/
 		
 		_em.getTransaction().begin();
@@ -137,6 +149,47 @@ public class ConcertResource {
 		return response.build();
 	}
 	
+	@POST
+	@Path("authenticate")
+	@Consumes(javax.ws.rs.core.MediaType.APPLICATION_XML)
+	@Produces(javax.ws.rs.core.MediaType.APPLICATION_XML)
+	public Response authenticateUser(nz.ac.auckland.concert.common.dto.UserDTO dtoUser) {
+		
+		if(dtoUser.getUsername() == null || dtoUser.getPassword() == null){
+			_logger.debug(Messages.AUTHENTICATE_USER_WITH_MISSING_FIELDS);
+			throw new BadRequestException(Response
+					.status (Status.BAD_REQUEST)
+					.entity (Messages.AUTHENTICATE_USER_WITH_MISSING_FIELDS)
+					.build());
+		}
+		
+		_em.getTransaction().begin();
+		
+		User searchUser = _em.find(User.class, dtoUser.getUsername());
+		
+		_em.getTransaction().commit();
+		
+		if(searchUser == null){
+			throw new BadRequestException(Response
+					.status (Status.BAD_REQUEST)
+					.entity (Messages.AUTHENTICATE_NON_EXISTENT_USER)
+					.build());
+		}
+		
+		if(!searchUser.getPassword().equals(dtoUser.getPassword())){
+			throw new BadRequestException(Response
+					.status (Status.BAD_REQUEST)
+					.entity (Messages.AUTHENTICATE_USER_WITH_ILLEGAL_PASSWORD)
+					.build());
+		}
+		
+		ResponseBuilder response = Response.ok();
+
+		response.cookie(makeCookie(_token));
+		
+		return response.entity(UserMapper.toDto(searchUser)).build();
+	}
+	
 	/**
 	 * Helper method that can be called from every service method to generate a 
 	 * NewCookie instance, if necessary, based on the clientId parameter.
@@ -152,13 +205,10 @@ public class ConcertResource {
 	 * response message. 
 	 */
 	private NewCookie makeCookie(Cookie clientToken){
-		NewCookie newCookie = null;
-
-		if(clientToken == null) {
-			newCookie = new NewCookie(Config.CLIENT_COOKIE, UUID.randomUUID().toString());
+		
+		NewCookie newCookie = new NewCookie(Config.CLIENT_COOKIE, UUID.randomUUID().toString());
 			_token = newCookie;
 			_logger.info("Generated cookie: " + newCookie.getValue());
-		} 
 
 		return newCookie;
 	}
