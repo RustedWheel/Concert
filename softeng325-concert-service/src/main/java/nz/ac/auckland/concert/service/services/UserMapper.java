@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import nz.ac.auckland.concert.common.dto.UserDTO;
 import nz.ac.auckland.concert.service.domain.User;
 
 
@@ -19,6 +20,15 @@ public class UserMapper {
 				dtoUser.getLastname());
 		return user;
 		
+	}
+
+	public static UserDTO toDto(User user) {
+		UserDTO userDTO = new UserDTO(user.getUsername(),
+				user.getPassword(),
+				user.getFirstname(), 
+				user.getLastname());
+		return userDTO;
+
 	}
 	
 }

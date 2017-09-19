@@ -55,17 +55,7 @@ public class User {
 	private String _lastname;
 	
 	@ElementCollection
-	@CollectionTable( name = "USER_CREDITCARDS", joinColumns= @JoinColumn( name = "USERNAME" ) )
-/*	@AttributeOverrides( {
-		@AttributeOverride( name = "_type" ,
-		column = @Column( name = "TYPE" , nullable = false) ),
-		@AttributeOverride( name = "_name" ,
-		column = @Column( name = "NAME" , nullable = false) ),
-		@AttributeOverride( name = "_number" ,
-		column = @Column( name = "NUMBER" , nullable = false) ),
-		@AttributeOverride( name = "_expiryDate" ,
-		column = @Column( name = "EXPIRY_DATE" , nullable = false) )
-		} )*/
+	@CollectionTable( name = "USER_CREDITCARDS")
 	private Set<CreditCard> _creditcard;
 	
 	protected User() {}

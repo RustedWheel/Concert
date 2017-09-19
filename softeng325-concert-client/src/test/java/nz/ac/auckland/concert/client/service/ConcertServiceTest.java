@@ -124,7 +124,7 @@ public class ConcertServiceTest {
 		}
 	}
 	
-	/*@Test*/
+	@Test
 	public void testCreateUserWithMissingField() {
 		try {
 			UserDTO userDTO = new UserDTO(null, "123", "Churchill", "Winston");
@@ -135,7 +135,7 @@ public class ConcertServiceTest {
 		}
 	}
 	
-	/*@Test */
+	/*@Test*/
 	public void testCreateUserWithDuplicateUsername() {
 		boolean createdFirstUser = false;
 		try {
