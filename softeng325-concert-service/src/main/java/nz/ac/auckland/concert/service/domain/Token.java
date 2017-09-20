@@ -7,7 +7,9 @@ import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -17,20 +19,32 @@ import javax.xml.bind.annotation.XmlRootElement;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-@Embeddable
+@Entity
+@Table(name = "TOKEN")
+@XmlRootElement(name = "token")
+@XmlAccessorType(XmlAccessType.FIELD)
 public class Token{
 	
-	@Column(nullable = false, name = "COOKIEVALUE")
-	private String _cookieValue;
+	@Id
+	@Column(nullable = false, name = "TOKEN_KEY")
+	private String _tokenKey;
+	
+/*	@OneToOne(
+			optional = false)
+			@JoinColumn(
+			name="USER",
+			unique=true )
+	private User _user;*/
 	
 	protected Token() {}
 	
-	public Token(String cookieValue){
-		_cookieValue = cookieValue;
+	public Token(String Value/*, User user*/){
+		_tokenKey = Value;
+		/*_user = user;*/
 	}
 	
-	public String getCookie() {
-		return _cookieValue;
+	public String getTokenValue() {
+		return _tokenKey;
 	}
 	
 	@Override
@@ -42,14 +56,16 @@ public class Token{
 
         Token rhs = (Token) obj;
         return new EqualsBuilder().
-            append(_cookieValue, rhs._cookieValue).
+            append(_tokenKey, rhs._tokenKey).
+            /*append(_user, rhs._user).*/
             isEquals();
 	}
 	
 	@Override
 	public int hashCode() {
 		return new HashCodeBuilder(17, 31). 
-	            append(_cookieValue).
+	            append(_tokenKey).
+	            /*append(_user).*/
 	            hashCode();
 	}
 	

@@ -4,14 +4,17 @@ import java.util.Set;
 
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
+import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -50,7 +53,8 @@ public class User {
 	@Column(nullable = false, name = "LAST_NAME")
 	private String _lastname;
 	
-	@Embedded
+	@OneToOne(optional = false,cascade = {CascadeType.PERSIST,CascadeType.REMOVE}, fetch = FetchType.LAZY )
+	@JoinColumn(name="USER_TOKEN",unique=true )
 	private Token _cookieToken;
 	
 	@ElementCollection

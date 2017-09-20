@@ -53,13 +53,17 @@ public class ConcertResource {
 					.build());
 		}
 		
-/*		_em.getTransaction().begin();
+/*		System.out.println("Token checked!");
+		System.out.println("Token value: " + token.getValue());
 		
-		User searchUser = _em.find(User.class, dtoUser.getUsername());
+		_em.getTransaction().begin();
+		
+		Token storedToken = _em.find(Token.class, token.getValue());
 		
 		_em.getTransaction().commit();
 		
-		if(!token.getName().equals(Config.CLIENT_COOKIE) || !token.getValue().equals(_token.getValue())){
+		if(!token.getName().equals(Config.CLIENT_COOKIE) || storedToken == null){
+			
 			throw new NotAuthorizedException(Response
 					.status (Status.UNAUTHORIZED)
 					.entity (Messages.BAD_AUTHENTICATON_TOKEN)
@@ -141,8 +145,6 @@ public class ConcertResource {
 		
 		NewCookie cookie = makeCookie(null);
 		
-		System.out.println(cookie.getMaxAge());
-		
 		Token userToken = new Token(cookie.getValue());
 		
 		user.setToken(userToken);
@@ -198,7 +200,8 @@ public class ConcertResource {
 		
 		ResponseBuilder response = Response.ok();
 
-		response.cookie(makeCookie(searchUser.getToken().getCookie()));
+		response.cookie(makeCookie(searchUser.getToken().getTokenValue()));
+		System.out.print("Authentication token value:" + searchUser.getToken().getTokenValue());
 		
 		return response.entity(UserMapper.toDto(searchUser)).build();
 	}
