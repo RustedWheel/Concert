@@ -30,6 +30,7 @@ import nz.ac.auckland.concert.common.message.Messages;
 import nz.ac.auckland.concert.service.common.Config;
 import nz.ac.auckland.concert.service.domain.Concert;
 import nz.ac.auckland.concert.service.domain.Performer;
+import nz.ac.auckland.concert.service.domain.Token;
 import nz.ac.auckland.concert.service.domain.User;
 
 
@@ -40,18 +41,23 @@ public class ConcertResource {
 	private static Logger _logger = LoggerFactory
 			.getLogger(ConcertResource.class);
 	private EntityManager _em = PersistenceManager.instance().createEntityManager();
-	private Cookie _token;
 	
 	@GET
 	@Produces(javax.ws.rs.core.MediaType.APPLICATION_XML)
 	public Response retrieveConcerts(@CookieParam("clientUsername") Cookie token) {
 		
-/*		if(token == null || _token == null){
+		if(token == null){
 			throw new NotAuthorizedException(Response
 					.status (Status.UNAUTHORIZED)
 					.entity (Messages.UNAUTHENTICATED_REQUEST)
 					.build());
 		}
+		
+/*		_em.getTransaction().begin();
+		
+		User searchUser = _em.find(User.class, dtoUser.getUsername());
+		
+		_em.getTransaction().commit();
 		
 		if(!token.getName().equals(Config.CLIENT_COOKIE) || !token.getValue().equals(_token.getValue())){
 			throw new NotAuthorizedException(Response
@@ -133,6 +139,14 @@ public class ConcertResource {
 
 		User user = UserMapper.toDomainModel(dtoUser);
 		
+		NewCookie cookie = makeCookie(null);
+		
+		System.out.println(cookie.getMaxAge());
+		
+		Token userToken = new Token(cookie.getValue());
+		
+		user.setToken(userToken);
+		
 		_em.getTransaction().begin();
 		
 		_em.persist(user);
@@ -141,10 +155,9 @@ public class ConcertResource {
 		
 		_logger.debug("Created User with username: " + user.getUsername());
 		
-		
 		ResponseBuilder response = Response.created(URI.create("/concerts/users/" + user.getUsername()));
-
-		response.cookie(makeCookie(_token));
+		
+		response.cookie(cookie);
 		
 		return response.build();
 	}
@@ -185,7 +198,7 @@ public class ConcertResource {
 		
 		ResponseBuilder response = Response.ok();
 
-		response.cookie(makeCookie(_token));
+		response.cookie(makeCookie(searchUser.getToken().getCookie()));
 		
 		return response.entity(UserMapper.toDto(searchUser)).build();
 	}
@@ -204,13 +217,35 @@ public class ConcertResource {
 	 * method returns null as there's no need to return a NewCookie in the HTTP
 	 * response message. 
 	 */
-	private NewCookie makeCookie(Cookie clientToken){
+	private NewCookie makeCookie(String cookieValue){
 		
-		NewCookie newCookie = new NewCookie(Config.CLIENT_COOKIE, UUID.randomUUID().toString());
-			_token = newCookie;
+		String value;
+		
+		if(cookieValue != null){
+			value = cookieValue;
+		} else {
+			value = UUID.randomUUID().toString();
+		}
+		
+		NewCookie newCookie = new NewCookie(Config.CLIENT_COOKIE, value);
+		
 			_logger.info("Generated cookie: " + newCookie.getValue());
 
 		return newCookie;
 	}
+	
+	
+/*	private void persistToken(Cookie clientToken, User user){
+		
+		_em.getTransaction().begin();
+		
+		Token token = new Token(user, clientToken.getValue());
+		
+		_em.persist(token);
+		
+		_em.getTransaction().commit();
 
+	}*/
+	
+	
 }

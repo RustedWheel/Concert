@@ -50,6 +50,9 @@ public class User {
 	@Column(nullable = false, name = "LAST_NAME")
 	private String _lastname;
 	
+	@Embedded
+	private Token _cookieToken;
+	
 	@ElementCollection
 	@CollectionTable( name = "USER_CREDITCARDS")
 	private Set<CreditCard> _creditcard;
@@ -92,11 +95,19 @@ public class User {
 		return _creditcard;
 	}
 	
+	public Token getToken() {
+		return _cookieToken;
+	}
+	
+	public void setToken(Token token) {
+		_cookieToken = token;
+	}
+	
 	public void setCreditcard(Set<CreditCard> creditcard) {
 		_creditcard = creditcard;
 	}
 	
-	public void AddCreditcard(CreditCard creditcard) {
+	public void addCreditcard(CreditCard creditcard) {
 		_creditcard.add(creditcard);
 	}
 	

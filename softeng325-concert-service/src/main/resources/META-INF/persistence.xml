@@ -29,6 +29,7 @@
 		<class>nz.ac.auckland.concert.service.domain.Concert</class>
 		<class>nz.ac.auckland.concert.service.domain.Performer</class>
 		<class>nz.ac.auckland.concert.service.domain.NewsItem</class>
+		<class>nz.ac.auckland.concert.service.domain.Token</class>
 
 		<properties>
 			<!--  Configure the data source. In this case the embedded H2 database
