@@ -2,18 +2,15 @@ package nz.ac.auckland.concert.service.domain;
 
 import java.util.Set;
 
-import javax.persistence.AttributeOverride;
-import javax.persistence.AttributeOverrides;
 import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
-import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -60,6 +57,9 @@ public class User {
 	@ElementCollection
 	@CollectionTable( name = "USER_CREDITCARDS")
 	private Set<CreditCard> _creditcard;
+	
+	@OneToMany
+	private Set<Reservation> _reservations;
 	
 	protected User() {}
 	

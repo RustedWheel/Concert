@@ -3,6 +3,10 @@ package nz.ac.auckland.concert.common.dto;
 import nz.ac.auckland.concert.common.types.SeatNumber;
 import nz.ac.auckland.concert.common.types.SeatRow;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlRootElement;
+
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -14,6 +18,9 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
  * _number the number of the seat.
  *
  */
+
+@XmlRootElement
+@XmlAccessorType(XmlAccessType.FIELD)
 public class SeatDTO {
 
 	private SeatRow _row;

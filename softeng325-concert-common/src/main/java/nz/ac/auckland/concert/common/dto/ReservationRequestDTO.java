@@ -2,6 +2,10 @@ package nz.ac.auckland.concert.common.dto;
 
 import java.time.LocalDateTime;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlRootElement;
+
 import nz.ac.auckland.concert.common.types.PriceBand;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -18,6 +22,9 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
  *                reserved.
  *
  */
+
+@XmlRootElement
+@XmlAccessorType(XmlAccessType.FIELD)
 public class ReservationRequestDTO {
 
 	private int _numberOfSeats;

@@ -30,6 +30,7 @@ import nz.ac.auckland.concert.common.types.PriceBand;
  *
  */
 
+@XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
 public class BookingDTO {
 

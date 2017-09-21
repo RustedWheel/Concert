@@ -2,6 +2,7 @@ package nz.ac.auckland.concert.service.services;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -29,9 +30,11 @@ import org.slf4j.LoggerFactory;
 import nz.ac.auckland.concert.common.dto.UserDTO;
 import nz.ac.auckland.concert.common.message.Messages;
 import nz.ac.auckland.concert.service.common.Config;
+import nz.ac.auckland.concert.service.domain.Booking;
 import nz.ac.auckland.concert.service.domain.Concert;
 import nz.ac.auckland.concert.service.domain.CreditCard;
 import nz.ac.auckland.concert.service.domain.Performer;
+import nz.ac.auckland.concert.service.domain.Seat;
 import nz.ac.auckland.concert.service.domain.Token;
 import nz.ac.auckland.concert.service.domain.User;
 
@@ -44,6 +47,20 @@ public class ConcertResource {
 	private static Logger _logger = LoggerFactory
 			.getLogger(ConcertResource.class);
 	private EntityManager _em = PersistenceManager.instance().createEntityManager();
+	
+	// AWS S3 access credentials for concert images.
+	private static final String AWS_ACCESS_KEY_ID = "AKIAIDYKYWWUZ65WGNJA";
+	private static final String AWS_SECRET_ACCESS_KEY = "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";
+
+	// Name of the S3 bucket that stores images.
+	private static final String AWS_BUCKET = "concert.aucklanduni.ac.nz";
+
+	private static final String FILE_SEPARATOR = System
+			.getProperty("file.separator");
+	private static final String USER_DIRECTORY = System
+			.getProperty("user.home");
+	private static final String DOWNLOAD_DIRECTORY = USER_DIRECTORY
+			+ FILE_SEPARATOR + "images";
 
 	@GET
 	@Produces(javax.ws.rs.core.MediaType.APPLICATION_XML)
@@ -189,28 +206,7 @@ public class ConcertResource {
 	@Produces(javax.ws.rs.core.MediaType.APPLICATION_XML)
 	public Response registerCreditCard(nz.ac.auckland.concert.common.dto.CreditCardDTO creditCardDTO, @CookieParam("clientUsername") Cookie token) {
 
-		if(token == null){
-			_logger.debug("Token is null");
-			
-			throw new NotAuthorizedException(Response
-					.status (Status.UNAUTHORIZED)
-					.entity (Messages.UNAUTHENTICATED_REQUEST)
-					.build());
-		}
-
-		_em.getTransaction().begin();
-
-		Token storedToken = _em.find(Token.class, token.getValue());
-
-		_em.getTransaction().commit();
-
-		if(!token.getName().equals(Config.CLIENT_COOKIE) || storedToken == null){
-
-			throw new NotAuthorizedException(Response
-					.status (Status.UNAUTHORIZED)
-					.entity (Messages.BAD_AUTHENTICATON_TOKEN)
-					.build());
-		}
+		Token storedToken = authenticateToken(token);
 		
 		_em.getTransaction().begin();
 		
@@ -228,11 +224,69 @@ public class ConcertResource {
 		
 		_em.getTransaction().commit();
 
+		ResponseBuilder response = Response.noContent();
+
+		return response.build();
+	}
+	
+	
+	@POST
+	@Path("reservation")
+	@Consumes(javax.ws.rs.core.MediaType.APPLICATION_XML)
+	@Produces(javax.ws.rs.core.MediaType.APPLICATION_XML)
+	public Response makeReservation(nz.ac.auckland.concert.common.dto.ReservationRequestDTO reservationRequest, @CookieParam("clientUsername") Cookie token) {
+
+		Token storedToken = authenticateToken(token);
+		
+		Long concertID = reservationRequest.getConcertId();
+		
+		Set<Seat> allSeats = new HashSet<Seat>();
+		Set<Seat> bookedSeats = new HashSet<Seat>();
+		Set<Seat> avilableSeats = new HashSet<Seat>();
+		
+		
+		
+		_em.getTransaction().begin();
+		
+		TypedQuery<Booking> bookingQuery = _em.createQuery("select c from " + Booking.class.getName() +  " c where CONCERT_ID = (:concertID)", Booking.class);
+		List<Booking> bookings = bookingQuery.getResultList();
+		
+		User user = storedToken.getUser();
+		
+		_em.getTransaction().commit();
+		
+		for(Booking booking : bookings){
+			for(Seat bookedSeat : booking.getSeats()){
+				bookedSeats.add(bookedSeat);
+			}
+		}
+		
+		
+		
+		
+		/*_em.getTransaction().begin();
+		
+		User user = storedToken.getUser();
+		
+		_logger.debug("Found user with username " + user.getUsername());
+		
+		for(CreditCard card: user.getCreditcard()){
+			_logger.debug("Found user with user credit card: " + card.getNumber());
+		}
+		
+		user.addCreditcard(CreditCardMapper.toDomainModel(creditCardDTO));
+		
+		_em.persist(user);
+		
+		_em.getTransaction().commit();*/
+
 		ResponseBuilder response = Response.ok();
 
 		return response.build();
 	}
 
+	
+	
 	/**
 	 * Helper method that can be called from every service method to generate a 
 	 * NewCookie instance, if necessary, based on the clientId parameter.
@@ -263,6 +317,34 @@ public class ConcertResource {
 		_logger.info("Generated cookie: " + newCookie.getValue());
 
 		return newCookie;
+	}
+	
+	private Token authenticateToken(Cookie cookieToken){
+
+		if(cookieToken == null){
+			_logger.debug("Token is null");
+			
+			throw new NotAuthorizedException(Response
+					.status (Status.UNAUTHORIZED)
+					.entity (Messages.UNAUTHENTICATED_REQUEST)
+					.build());
+		}
+
+		_em.getTransaction().begin();
+
+		Token storedToken = _em.find(Token.class, cookieToken.getValue());
+
+		_em.getTransaction().commit();
+
+		if(!cookieToken.getName().equals(Config.CLIENT_COOKIE) || storedToken == null){
+
+			throw new NotAuthorizedException(Response
+					.status (Status.UNAUTHORIZED)
+					.entity (Messages.BAD_AUTHENTICATON_TOKEN)
+					.build());
+		}
+		
+		return storedToken;
 	}
 
 }

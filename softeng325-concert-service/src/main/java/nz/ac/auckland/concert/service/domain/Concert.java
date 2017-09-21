@@ -83,24 +83,17 @@ public class Concert implements Comparable<Concert> {
 	@Column(name = "PERFORMER_ID")
 	private Set<Performer> _performers;
 	
-	@OneToMany(mappedBy="concert")
-	private Set<Booking> _bookings;
 	
-	public Concert(Long id, String title, Set<LocalDateTime> dates, Map<PriceBand, BigDecimal> ticketPrices, Set<Performer> performers, Set<Booking> bookings) {
+	public Concert(Long id, String title, Set<LocalDateTime> dates, Map<PriceBand, BigDecimal> ticketPrices, Set<Performer> performers) {
 		_cid = id;
 		_title = title;
 		_dates = dates;
 		_tariff = new HashMap<PriceBand, BigDecimal>(ticketPrices);
 		_performers = performers;
-		_bookings = bookings;
 	}
 	
-	public Concert(Long id, String title, Set<LocalDateTime> date, Map<PriceBand, BigDecimal> ticketPrices, Set<Performer> performers) {
-		this(id, title, date, ticketPrices, performers, null);
-	}
-	
-	public Concert(String title, Set<LocalDateTime> date, Map<PriceBand, BigDecimal> ticketPrices, Set<Performer> performers, Set<Booking> bookings) {
-		this(null, title, date, ticketPrices, performers, bookings);
+	public Concert(String title, Set<LocalDateTime> date, Map<PriceBand, BigDecimal> ticketPrices, Set<Performer> performers) {
+		this(null, title, date, ticketPrices, performers);
 	}
 
 	// Required for JPA and JAXB.
@@ -141,14 +134,7 @@ public class Concert implements Comparable<Concert> {
 	public void setTicketPrice(Map<PriceBand, BigDecimal> Tariff) {
 		_tariff = Tariff;
 	}
-	
-	public Set<Booking> getBookings() {
-		return _bookings;
-	}
-	
-	public void setBookings(Set<Booking> bookings) {
-		_bookings = bookings;
-	}
+
 
 	@Override
 	public String toString() {

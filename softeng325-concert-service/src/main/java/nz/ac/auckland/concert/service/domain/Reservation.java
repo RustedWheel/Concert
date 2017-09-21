@@ -16,6 +16,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -41,9 +42,16 @@ public class Reservation {
 	@Column( name = "RID" )
 	private Long _id;
 	
-	@Embedded
+	@Enumerated(EnumType.STRING)
+	@Column( nullable= false, name = "PRICEBAND" )
+	private PriceBand _seatType;
 	
-	private ReservationRequest _request;
+	@ManyToOne
+	private Concert _concert;
+	
+	@Column(nullable = false, name = "DATE" )
+	@Convert(converter = LocalDateTimeConverter.class)
+	private LocalDateTime _date;
 	
 	@ElementCollection
 	@CollectionTable(name = "RESERVATION_SEATS",joinColumns= @JoinColumn( name = "RID" ) )
@@ -52,9 +60,11 @@ public class Reservation {
 	
 	public Reservation() {}
 	
-	public Reservation(Long id, ReservationRequest request, Set<Seat> seats) {
+	public Reservation(Long id, PriceBand seatType, Concert concert, LocalDateTime date , Set<Seat> seats) {
 		_id = id;
-		_request = request;
+		_seatType = seatType;
+		_concert = concert;
+		_date = date;
 		_seats = new HashSet<Seat>(seats);
 	}
 	
@@ -62,8 +72,16 @@ public class Reservation {
 		return _id;
 	}
 	
-	public ReservationRequest getReservationRequest() {
-		return _request;
+	public PriceBand getSeatType() {
+		return _seatType;
+	}
+	
+	public Concert getConcert() {
+		return _concert;
+	}
+	
+	public LocalDateTime getDate() {
+		return _date;
 	}
 	
 	public Set<Seat> getSeats() {
@@ -79,7 +97,9 @@ public class Reservation {
 
         Reservation rhs = (Reservation) obj;
         return new EqualsBuilder().
-            append(_request, rhs._request).
+        	append(_seatType, rhs._seatType).
+        	append(_concert, rhs._concert).
+        	append(_date, rhs._date).
             append(_seats, rhs._seats).
             isEquals();
 	}
@@ -87,7 +107,9 @@ public class Reservation {
 	@Override
 	public int hashCode() {
 		return new HashCodeBuilder(17, 31). 
-	            append(_request).
+	        	append(_seatType).
+	        	append(_concert).
+	        	append(_date).
 	            append(_seats).
 	            hashCode();
 	}
