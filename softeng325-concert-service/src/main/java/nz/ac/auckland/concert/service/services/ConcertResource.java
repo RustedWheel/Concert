@@ -1,6 +1,7 @@
 package nz.ac.auckland.concert.service.services;
 
 import java.net.URI;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -29,11 +30,16 @@ import org.slf4j.LoggerFactory;
 
 import nz.ac.auckland.concert.common.dto.UserDTO;
 import nz.ac.auckland.concert.common.message.Messages;
+import nz.ac.auckland.concert.common.types.PriceBand;
+import nz.ac.auckland.concert.common.types.SeatNumber;
+import nz.ac.auckland.concert.common.types.SeatRow;
+import nz.ac.auckland.concert.common.util.TheatreLayout;
 import nz.ac.auckland.concert.service.common.Config;
 import nz.ac.auckland.concert.service.domain.Booking;
 import nz.ac.auckland.concert.service.domain.Concert;
 import nz.ac.auckland.concert.service.domain.CreditCard;
 import nz.ac.auckland.concert.service.domain.Performer;
+import nz.ac.auckland.concert.service.domain.Reservation;
 import nz.ac.auckland.concert.service.domain.Seat;
 import nz.ac.auckland.concert.service.domain.Token;
 import nz.ac.auckland.concert.service.domain.User;
@@ -234,32 +240,79 @@ public class ConcertResource {
 	@Path("reservation")
 	@Consumes(javax.ws.rs.core.MediaType.APPLICATION_XML)
 	@Produces(javax.ws.rs.core.MediaType.APPLICATION_XML)
-	public Response makeReservation(nz.ac.auckland.concert.common.dto.ReservationRequestDTO reservationRequest, @CookieParam("clientUsername") Cookie token) {
+	public Response makeReservation(nz.ac.auckland.concert.common.dto.ReservationRequestDTO dtoReservationRequest, @CookieParam("clientUsername") Cookie token) {
 
 		Token storedToken = authenticateToken(token);
 		
-		Long concertID = reservationRequest.getConcertId();
+		if(dtoReservationRequest.getConcertId() == null || dtoReservationRequest.getDate() == null || dtoReservationRequest.getNumberOfSeats() <= 0 || dtoReservationRequest.getSeatType() == null){
+			throw new BadRequestException(Response
+					.status (Status.BAD_REQUEST)
+					.entity (Messages.RESERVATION_REQUEST_WITH_MISSING_FIELDS)
+					.build());
+		}
 		
-		Set<Seat> allSeats = new HashSet<Seat>();
 		Set<Seat> bookedSeats = new HashSet<Seat>();
 		Set<Seat> avilableSeats = new HashSet<Seat>();
-		
-		
+		Set<Seat> reservedSeats = new HashSet<Seat>();
 		
 		_em.getTransaction().begin();
 		
-		TypedQuery<Booking> bookingQuery = _em.createQuery("select c from " + Booking.class.getName() +  " c where CONCERT_ID = (:concertID)", Booking.class);
+		Concert concert = _em.find(Concert.class, dtoReservationRequest.getConcertId());
+		
+		TypedQuery<Booking> bookingQuery = _em.createQuery("select c from " + Booking.class.getName() +  " c where CONCERT_CID = (:concertID)", Booking.class);
+		bookingQuery.setParameter("concertID", dtoReservationRequest.getConcertId());
 		List<Booking> bookings = bookingQuery.getResultList();
 		
 		User user = storedToken.getUser();
 		
 		_em.getTransaction().commit();
 		
+		if(!concert.getDates().contains(dtoReservationRequest.getDate())){
+			throw new BadRequestException(Response
+					.status (Status.BAD_REQUEST)
+					.entity (Messages.CONCERT_NOT_SCHEDULED_ON_RESERVATION_DATE)
+					.build());
+		}
+		
+		
 		for(Booking booking : bookings){
 			for(Seat bookedSeat : booking.getSeats()){
 				bookedSeats.add(bookedSeat);
 			}
 		}
+		
+		Set<SeatRow> seatRows = TheatreLayout.getRowsForPriceBand(dtoReservationRequest.getSeatType());
+		
+		for(SeatRow row : seatRows){
+			int number_of_rows = TheatreLayout.getNumberOfSeatsForRow(row);
+			
+			for(int i = 1; i < number_of_rows + 1; i++){
+				_logger.debug("Created seat, row: " + row.name() + " number: " + i);
+				Seat seat = new Seat(row, new SeatNumber(i));
+				
+				if(!bookedSeats.contains(seat)){
+					avilableSeats.add(seat);
+				}
+			}
+		}
+		
+		if(avilableSeats.size() < dtoReservationRequest.getNumberOfSeats()){
+			throw new BadRequestException(Response
+					.status (Status.BAD_REQUEST)
+					.entity (Messages.INSUFFICIENT_SEATS_AVAILABLE_FOR_RESERVATION)
+					.build());
+		}
+		
+		int seatsToReserve = dtoReservationRequest.getNumberOfSeats();
+		for(Seat seat : avilableSeats){
+			reservedSeats.add(seat);
+			seatsToReserve--;
+			if(seatsToReserve == 0){
+				break;
+			}
+		}
+		
+		/*Reservation reservation = new Reservation(Long id, dtoReservationRequest.getSeatType(), concert, dtoReservationRequest.getDate() , reservedSeats);*/
 		
 		
 		

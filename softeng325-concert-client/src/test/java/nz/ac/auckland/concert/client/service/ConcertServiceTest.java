@@ -208,7 +208,7 @@ public class ConcertServiceTest {
 		}
 	}
 	
-/*	@Test*/
+	@Test
 	public void testMakeReservation() {
 		try {
 			final int numberOfSeatsToBook = 2;
