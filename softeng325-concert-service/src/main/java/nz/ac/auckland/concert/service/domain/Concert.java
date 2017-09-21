@@ -16,6 +16,7 @@ import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
@@ -77,12 +78,12 @@ public class Concert implements Comparable<Concert> {
 	@Column( name = "TICKET_PRICES" )
 	private Map<PriceBand, BigDecimal> _tariff;
 	 
-	@ManyToMany
+	@ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY )
 	@JoinTable(name="CONCERT_PERFORMER", joinColumns= @JoinColumn(name = "CID"),inverseJoinColumns= @JoinColumn(name = "PID"))
 	@Column(name = "PERFORMER_ID")
 	private Set<Performer> _performers;
 	
-	@OneToMany(mappedBy="concert", cascade = {CascadeType.PERSIST,CascadeType.REMOVE})
+	@OneToMany(mappedBy="concert")
 	private Set<Booking> _bookings;
 	
 	public Concert(Long id, String title, Set<LocalDateTime> dates, Map<PriceBand, BigDecimal> ticketPrices, Set<Performer> performers, Set<Booking> bookings) {

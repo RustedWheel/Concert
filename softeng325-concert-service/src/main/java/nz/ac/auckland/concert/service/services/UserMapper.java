@@ -16,8 +16,8 @@ public class UserMapper {
 		
 		User user = new User(dtoUser.getUsername(),
 				dtoUser.getPassword(),
-				dtoUser.getFirstname(), 
-				dtoUser.getLastname());
+				dtoUser.getLastname(),
+				dtoUser.getFirstname());
 		return user;
 		
 	}
@@ -25,8 +25,8 @@ public class UserMapper {
 	public static UserDTO toDto(User user) {
 		UserDTO userDTO = new UserDTO(user.getUsername(),
 				user.getPassword(),
-				user.getFirstname(), 
-				user.getLastname());
+				user.getLastname(),
+				user.getFirstname() );
 		return userDTO;
 
 	}

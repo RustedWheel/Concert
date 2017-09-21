@@ -26,25 +26,26 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 public class Token{
 	
 	@Id
-	@Column(nullable = false, name = "TOKEN_KEY")
+	@Column(name = "TOKEN_KEY")
 	private String _tokenKey;
 	
-/*	@OneToOne(
-			optional = false)
-			@JoinColumn(
-			name="USER",
-			unique=true )
-	private User _user;*/
+	@OneToOne
+	@JoinColumn(name="USER",unique=true )
+	private User _user;
 	
 	protected Token() {}
 	
-	public Token(String Value/*, User user*/){
+	public Token(String Value, User user){
 		_tokenKey = Value;
-		/*_user = user;*/
+		_user = user;
 	}
 	
 	public String getTokenValue() {
 		return _tokenKey;
+	}
+	
+	public User getUser() {
+		return _user;
 	}
 	
 	@Override
@@ -57,7 +58,7 @@ public class Token{
         Token rhs = (Token) obj;
         return new EqualsBuilder().
             append(_tokenKey, rhs._tokenKey).
-            /*append(_user, rhs._user).*/
+            append(_user, rhs._user).
             isEquals();
 	}
 	
@@ -65,7 +66,7 @@ public class Token{
 	public int hashCode() {
 		return new HashCodeBuilder(17, 31). 
 	            append(_tokenKey).
-	            /*append(_user).*/
+	            append(_user).
 	            hashCode();
 	}
 	

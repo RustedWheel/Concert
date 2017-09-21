@@ -396,7 +396,7 @@ public class ConcertServiceTest {
 		}
 	}
 
-	/*@Test*/
+	@Test
 	public void testRegisterCreditCard() {
 		try {
 			UserDTO userDTO = new UserDTO("Bulldog", "123", "Churchill", "Winston");
@@ -409,7 +409,7 @@ public class ConcertServiceTest {
 		} 
 	}
 	
-	/*@Test*/
+	@Test
 	public void testRegisterCreditCardWithUnauthenticatedUser() {
 		try {
 			CreditCardDTO creditCard = new CreditCardDTO(CreditCardDTO.Type.Visa, "Winston Churchill", "4929-1500-0055-9544", LocalDate.of(2019, 7, 31));

@@ -3,7 +3,6 @@ package nz.ac.auckland.concert.service.domain;
 import java.time.LocalDate;
 
 import javax.persistence.Column;
-import javax.persistence.Convert;
 import javax.persistence.Embeddable;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -11,8 +10,7 @@ import javax.persistence.Enumerated;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-import nz.ac.auckland.concert.common.jaxb.LocalDateAdapter;
-import nz.ac.auckland.concert.service.domain.jpa.LocalDateTimeConverter;
+import nz.ac.auckland.concert.common.dto.CreditCardDTO.Type;
 
 /**
  * DTO class to represent credit cards. 
@@ -28,9 +26,8 @@ import nz.ac.auckland.concert.service.domain.jpa.LocalDateTimeConverter;
 @Embeddable
 public class CreditCard {
 	
-	public enum Type {Visa, Master};
-	
 	@Enumerated(EnumType.STRING)
+	@Column(nullable = false, name = "TYPE")
 	private Type _type;
 	
 	@Column(nullable = false, name = "NAME")
@@ -40,7 +37,6 @@ public class CreditCard {
 	private String _number;
 	
 	@Column(nullable = false, name = "EXPIRY_DATE")
-	@Convert(converter = LocalDateTimeConverter.class)
 	private LocalDate _expiryDate;
 	
 	public CreditCard() {}

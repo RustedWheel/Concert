@@ -3,6 +3,7 @@ package nz.ac.auckland.concert.service.services;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.persistence.EntityManager;
@@ -29,96 +30,70 @@ import nz.ac.auckland.concert.common.dto.UserDTO;
 import nz.ac.auckland.concert.common.message.Messages;
 import nz.ac.auckland.concert.service.common.Config;
 import nz.ac.auckland.concert.service.domain.Concert;
+import nz.ac.auckland.concert.service.domain.CreditCard;
 import nz.ac.auckland.concert.service.domain.Performer;
 import nz.ac.auckland.concert.service.domain.Token;
 import nz.ac.auckland.concert.service.domain.User;
 
 
 
+
 @Path("/concerts")
 public class ConcertResource {
-	
+
 	private static Logger _logger = LoggerFactory
 			.getLogger(ConcertResource.class);
 	private EntityManager _em = PersistenceManager.instance().createEntityManager();
-	
+
 	@GET
 	@Produces(javax.ws.rs.core.MediaType.APPLICATION_XML)
-	public Response retrieveConcerts(@CookieParam("clientUsername") Cookie token) {
-		
-		if(token == null){
-			throw new NotAuthorizedException(Response
-					.status (Status.UNAUTHORIZED)
-					.entity (Messages.UNAUTHENTICATED_REQUEST)
-					.build());
-		}
-		
-/*		System.out.println("Token checked!");
-		System.out.println("Token value: " + token.getValue());
-		
-		_em.getTransaction().begin();
-		
-		Token storedToken = _em.find(Token.class, token.getValue());
-		
-		_em.getTransaction().commit();
-		
-		if(!token.getName().equals(Config.CLIENT_COOKIE) || storedToken == null){
-			
-			throw new NotAuthorizedException(Response
-					.status (Status.UNAUTHORIZED)
-					.entity (Messages.BAD_AUTHENTICATON_TOKEN)
-					.build());
-		}*/
-		
+	public Response retrieveConcerts() {
+
 		_em.getTransaction().begin();
 		TypedQuery<Concert> concertQuery = _em.createQuery("select c from " + Concert.class.getName() +  " c", Concert.class);
 		List<Concert> concerts = concertQuery.getResultList();
 		_em.getTransaction().commit();
-		
+
 		List<nz.ac.auckland.concert.common.dto.ConcertDTO> concertDTOs = new ArrayList<nz.ac.auckland.concert.common.dto.ConcertDTO>();
-		
+
 		for(Concert concert :concerts){
 			concertDTOs.add(ConcertMapper.toDto(concert));
 		}
-		
+
 		GenericEntity<List<nz.ac.auckland.concert.common.dto.ConcertDTO>> entity = new GenericEntity<List<nz.ac.auckland.concert.common.dto.ConcertDTO>>(concertDTOs) {};
 		ResponseBuilder response = Response.ok(entity);
 
 		return response.build();
 	}
-	
+
 	@GET
 	@Path("performers")
 	@Produces(javax.ws.rs.core.MediaType.APPLICATION_XML)
-	public Response retrievePerformers(@CookieParam("clientUsername") Cookie token) {
-		
-		/*if(token == null || !token.getName().equals(Config.CLIENT_COOKIE)){
-			throw new ServiceException(Messages.SERVICE_COMMUNICATION_ERROR);
-		}*/
+	public Response retrievePerformers() {
 
 		_em.getTransaction().begin();
 		TypedQuery<Performer> performerQuery = _em.createQuery("select p from " + Performer.class.getName() +  " p", Performer.class);
 		List<Performer> performers = performerQuery.getResultList();
 		_em.getTransaction().commit();
-		
+
 		List<nz.ac.auckland.concert.common.dto.PerformerDTO> performerDTOs = new ArrayList<nz.ac.auckland.concert.common.dto.PerformerDTO>();
-		
+
 		for(Performer performer :performers){
 			performerDTOs.add(PerformerMapper.toDto(performer));
 		}
-		
+
 		GenericEntity<List<nz.ac.auckland.concert.common.dto.PerformerDTO>> entity = new GenericEntity<List<nz.ac.auckland.concert.common.dto.PerformerDTO>>(performerDTOs){};
 		ResponseBuilder response = Response.ok(entity);
 
 		return response.build();
 	}
-	
+
 	@POST
 	@Path("users")
 	@Consumes(javax.ws.rs.core.MediaType.APPLICATION_XML)
 	@Produces(javax.ws.rs.core.MediaType.APPLICATION_XML)
 	public Response createUser(nz.ac.auckland.concert.common.dto.UserDTO dtoUser) {
-		
+
 		if(dtoUser.getUsername() == null || dtoUser.getPassword() == null || dtoUser.getFirstname() == null || dtoUser.getLastname() == null){
 			_logger.debug(Messages.CREATE_USER_WITH_MISSING_FIELDS);
 			throw new BadRequestException(Response
@@ -126,13 +101,13 @@ public class ConcertResource {
 					.entity (Messages.CREATE_USER_WITH_MISSING_FIELDS)
 					.build());
 		}
-		
+
 		_em.getTransaction().begin();
-		
+
 		User searchUser = _em.find(User.class, dtoUser.getUsername());
-		
+
 		_em.getTransaction().commit();
-		
+
 		if(searchUser != null){
 			_logger.debug(Messages.CREATE_USER_WITH_NON_UNIQUE_NAME);
 			throw new BadRequestException(Response
@@ -142,34 +117,35 @@ public class ConcertResource {
 		}
 
 		User user = UserMapper.toDomainModel(dtoUser);
-		
+
 		NewCookie cookie = makeCookie(null);
-		
-		Token userToken = new Token(cookie.getValue());
-		
+
+		Token userToken = new Token(cookie.getValue(), user);
+
 		user.setToken(userToken);
-		
+
 		_em.getTransaction().begin();
-		
+
 		_em.persist(user);
-		
+
 		_em.getTransaction().commit();
-		
+
 		_logger.debug("Created User with username: " + user.getUsername());
-		
+
 		ResponseBuilder response = Response.created(URI.create("/concerts/users/" + user.getUsername()));
-		
+
 		response.cookie(cookie);
-		
+
 		return response.build();
 	}
+
 	
 	@POST
 	@Path("authenticate")
 	@Consumes(javax.ws.rs.core.MediaType.APPLICATION_XML)
 	@Produces(javax.ws.rs.core.MediaType.APPLICATION_XML)
 	public Response authenticateUser(nz.ac.auckland.concert.common.dto.UserDTO dtoUser) {
-		
+
 		if(dtoUser.getUsername() == null || dtoUser.getPassword() == null){
 			_logger.debug(Messages.AUTHENTICATE_USER_WITH_MISSING_FIELDS);
 			throw new BadRequestException(Response
@@ -177,35 +153,86 @@ public class ConcertResource {
 					.entity (Messages.AUTHENTICATE_USER_WITH_MISSING_FIELDS)
 					.build());
 		}
-		
+
 		_em.getTransaction().begin();
-		
+
 		User searchUser = _em.find(User.class, dtoUser.getUsername());
-		
+
 		_em.getTransaction().commit();
-		
+
 		if(searchUser == null){
 			throw new BadRequestException(Response
 					.status (Status.BAD_REQUEST)
 					.entity (Messages.AUTHENTICATE_NON_EXISTENT_USER)
 					.build());
 		}
-		
+
 		if(!searchUser.getPassword().equals(dtoUser.getPassword())){
 			throw new BadRequestException(Response
 					.status (Status.BAD_REQUEST)
 					.entity (Messages.AUTHENTICATE_USER_WITH_ILLEGAL_PASSWORD)
 					.build());
 		}
-		
+
 		ResponseBuilder response = Response.ok();
 
 		response.cookie(makeCookie(searchUser.getToken().getTokenValue()));
 		System.out.print("Authentication token value:" + searchUser.getToken().getTokenValue());
-		
+
 		return response.entity(UserMapper.toDto(searchUser)).build();
 	}
-	
+
+
+	@POST
+	@Path("users/creditcard")
+	@Consumes(javax.ws.rs.core.MediaType.APPLICATION_XML)
+	@Produces(javax.ws.rs.core.MediaType.APPLICATION_XML)
+	public Response registerCreditCard(nz.ac.auckland.concert.common.dto.CreditCardDTO creditCardDTO, @CookieParam("clientUsername") Cookie token) {
+
+		if(token == null){
+			_logger.debug("Token is null");
+			
+			throw new NotAuthorizedException(Response
+					.status (Status.UNAUTHORIZED)
+					.entity (Messages.UNAUTHENTICATED_REQUEST)
+					.build());
+		}
+
+		_em.getTransaction().begin();
+
+		Token storedToken = _em.find(Token.class, token.getValue());
+
+		_em.getTransaction().commit();
+
+		if(!token.getName().equals(Config.CLIENT_COOKIE) || storedToken == null){
+
+			throw new NotAuthorizedException(Response
+					.status (Status.UNAUTHORIZED)
+					.entity (Messages.BAD_AUTHENTICATON_TOKEN)
+					.build());
+		}
+		
+		_em.getTransaction().begin();
+		
+		User user = storedToken.getUser();
+		
+		_logger.debug("Found user with username " + user.getUsername());
+		
+		for(CreditCard card: user.getCreditcard()){
+			_logger.debug("Found user with user credit card: " + card.getNumber());
+		}
+		
+		user.addCreditcard(CreditCardMapper.toDomainModel(creditCardDTO));
+		
+		_em.persist(user);
+		
+		_em.getTransaction().commit();
+
+		ResponseBuilder response = Response.ok();
+
+		return response.build();
+	}
+
 	/**
 	 * Helper method that can be called from every service method to generate a 
 	 * NewCookie instance, if necessary, based on the clientId parameter.
@@ -221,34 +248,21 @@ public class ConcertResource {
 	 * response message. 
 	 */
 	private NewCookie makeCookie(String cookieValue){
-		
+
 		String value;
-		
+
 		if(cookieValue != null){
 			value = cookieValue;
 		} else {
+			
 			value = UUID.randomUUID().toString();
 		}
-		
+
 		NewCookie newCookie = new NewCookie(Config.CLIENT_COOKIE, value);
-		
-			_logger.info("Generated cookie: " + newCookie.getValue());
+
+		_logger.info("Generated cookie: " + newCookie.getValue());
 
 		return newCookie;
 	}
-	
-	
-/*	private void persistToken(Cookie clientToken, User user){
-		
-		_em.getTransaction().begin();
-		
-		Token token = new Token(user, clientToken.getValue());
-		
-		_em.persist(token);
-		
-		_em.getTransaction().commit();
 
-	}*/
-	
-	
 }

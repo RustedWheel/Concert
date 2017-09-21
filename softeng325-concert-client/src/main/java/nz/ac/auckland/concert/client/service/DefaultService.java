@@ -43,7 +43,7 @@ public class DefaultService implements ConcertService {
 
 	private static String WEB_SERVICE_URI = "http://localhost:10000/services/concerts";
 	
-	private static String _cookieValues;
+	private String _cookieValues;
 
 	@Override
 	public Set<ConcertDTO> getConcerts() throws ServiceException {
@@ -53,18 +53,10 @@ public class DefaultService implements ConcertService {
 		Set<ConcertDTO> concertDTOs = new HashSet<ConcertDTO>();
 
 		Builder builder = client.target(WEB_SERVICE_URI).request();
-		addCookieToInvocation(builder);
+		
 		Response response = builder.get();
 		
-		switch (response.getStatus()){
-		case 400:
-				String errorMessage = response.readEntity (String.class);
-				System.out.println("UNAUTHORIZED ACCESS");
-				throw new ServiceException(errorMessage);
-		case 200: 
-				concertDTOs = new HashSet<ConcertDTO>(response.readEntity(new GenericType<List<nz.ac.auckland.concert.common.dto.ConcertDTO>>(){}));
-				break;
-		}
+		concertDTOs = new HashSet<ConcertDTO>(response.readEntity(new GenericType<List<nz.ac.auckland.concert.common.dto.ConcertDTO>>(){}));
 
 		// Check that the expected Concert is returned.
 
@@ -82,7 +74,7 @@ public class DefaultService implements ConcertService {
 		Set<PerformerDTO> PerformerDTOs = new HashSet<PerformerDTO>();
 
 		Builder builder = client.target(WEB_SERVICE_URI + "/performers").request();
-		addCookieToInvocation(builder);
+		
 		Response response = builder.get();
 		
 		// Check that the expected Concert is returned.
@@ -166,8 +158,21 @@ public class DefaultService implements ConcertService {
 
 	@Override
 	public void registerCreditCard(CreditCardDTO creditCard) throws ServiceException {
-		// TODO Auto-generated method stub
-
+		
+		Client client = ClientBuilder.newClient();
+		
+		Builder builder = client.target(WEB_SERVICE_URI + "/users/creditcard").request();
+		addCookieToInvocation(builder);
+		Response response = builder.post(Entity.xml(creditCard));
+		
+		switch (response.getStatus()){
+		case 401:
+				String errorMessage = response.readEntity (String.class);
+				throw new ServiceException(errorMessage);
+		}
+		
+		response.close();
+		client.close();
 	}
 
 	@Override

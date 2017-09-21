@@ -19,7 +19,7 @@ import nz.ac.auckland.concert.service.domain.Performer;
  */
 public class ConcertMapper {
 
-	static Concert toDomainModel(nz.ac.auckland.concert.common.dto.ConcertDTO dtoConcert) {
+/*	static Concert toDomainModel(nz.ac.auckland.concert.common.dto.ConcertDTO dtoConcert) {
 		
 		Map<PriceBand, BigDecimal> ticketPrices = new HashMap<PriceBand, BigDecimal>();
 		ticketPrices.put(nz.ac.auckland.concert.common.types.PriceBand.PriceBandA,
@@ -30,9 +30,9 @@ public class ConcertMapper {
 				dtoConcert.getTicketPrice(nz.ac.auckland.concert.common.types.PriceBand.PriceBandC));
 		
 		Set<Performer> _performers = new HashSet<Performer>();
-/*		for(){
+		for(){
 			
-		}*/
+		}
 		
 		Concert concert = new Concert(dtoConcert.getId(),
 				dtoConcert.getTitle(),
@@ -41,7 +41,7 @@ public class ConcertMapper {
 				null,
 				null);
 		return concert;
-	}
+	}*/
 	
 	static nz.ac.auckland.concert.common.dto.ConcertDTO toDto(nz.ac.auckland.concert.service.domain.Concert concert) {
 		
