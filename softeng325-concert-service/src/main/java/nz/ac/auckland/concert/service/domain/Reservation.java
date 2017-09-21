@@ -9,6 +9,7 @@ import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
+import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -40,29 +41,20 @@ public class Reservation {
 	@Column( name = "RID" )
 	private Long _id;
 	
+	@Embedded
+	
+	private ReservationRequest _request;
+	
 	@ElementCollection
 	@CollectionTable(name = "RESERVATION_SEATS",joinColumns= @JoinColumn( name = "RID" ) )
 	@Column( name = "SEAT" )
 	private Set<Seat> _seats;
-
-	
-	@Column(nullable = false, name = "CID")
-	private Long _concertId;
-	
-	@Column(nullable = false, name = "DATE" )
-	@Convert(converter = LocalDateTimeConverter.class)
-	private LocalDateTime _date;	
-	
-	@Enumerated(EnumType.STRING)
-	@Column( nullable= false, name = "PRICEBAND" )
-	private PriceBand _seatType;
 	
 	public Reservation() {}
 	
-	public Reservation(Long id, Long concertId,  Set<Seat> seats) {
+	public Reservation(Long id, ReservationRequest request, Set<Seat> seats) {
 		_id = id;
-		_concertId = concertId;
-		
+		_request = request;
 		_seats = new HashSet<Seat>(seats);
 	}
 	
@@ -70,7 +62,9 @@ public class Reservation {
 		return _id;
 	}
 	
-	
+	public ReservationRequest getReservationRequest() {
+		return _request;
+	}
 	
 	public Set<Seat> getSeats() {
 		return Collections.unmodifiableSet(_seats);
@@ -78,23 +72,23 @@ public class Reservation {
 	
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof ReservationDTO))
+		if (!(obj instanceof Reservation))
             return false;
         if (obj == this)
             return true;
 
-        ReservationDTO rhs = (ReservationDTO) obj;
+        Reservation rhs = (Reservation) obj;
         return new EqualsBuilder().
-            /*append(_request, rhs._request).
-            append(_seats, rhs._seats).*/
+            append(_request, rhs._request).
+            append(_seats, rhs._seats).
             isEquals();
 	}
 	
 	@Override
 	public int hashCode() {
 		return new HashCodeBuilder(17, 31). 
-	            /*append(_request).
-	            append(_seats).*/
+	            append(_request).
+	            append(_seats).
 	            hashCode();
 	}
 	
