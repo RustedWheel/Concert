@@ -5,7 +5,9 @@ import javax.persistence.TypedQuery;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 
+import nz.ac.auckland.concert.service.domain.Booking;
 import nz.ac.auckland.concert.service.domain.Performer;
+import nz.ac.auckland.concert.service.domain.Reservation;
 import nz.ac.auckland.concert.service.domain.Token;
 import nz.ac.auckland.concert.service.domain.User;
 
@@ -47,11 +49,25 @@ public class ConcertApplication extends Application {
 				em.remove(token);
 			}
 			
+			TypedQuery<Booking> bookingQuery = em.createQuery("select b from " + Booking.class.getName() +  " b", Booking.class);
+			List<Booking> bookings = bookingQuery.getResultList();
+			
+			for(Booking booking : bookings){
+				em.remove(booking);
+			}
+			
 			TypedQuery<User> userQuery = em.createQuery("select u from " + User.class.getName() +  " u", User.class);
 			List<User> users = userQuery.getResultList();
 			
 			for(User user : users){
 				em.remove(user);
+			}
+			
+			TypedQuery<Reservation> reservationQuery = em.createQuery("select r from " + Reservation.class.getName() +  " r", Reservation.class);
+			List<Reservation> reservations = reservationQuery.getResultList();
+			
+			for(Reservation reservation : reservations){
+				em.remove(reservation);
 			}
 			
 			em.flush();

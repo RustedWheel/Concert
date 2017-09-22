@@ -55,7 +55,7 @@ public class Reservation {
 	@Convert(converter = LocalDateTimeConverter.class)
 	private LocalDateTime _date;
 	
-	@ElementCollection
+	@ElementCollection(fetch = FetchType.LAZY )
 	@CollectionTable(name = "RESERVATION_SEATS",joinColumns= @JoinColumn( name = "RID" ) )
 	@Column( name = "SEAT" )
 	private Set<Seat> _seats;

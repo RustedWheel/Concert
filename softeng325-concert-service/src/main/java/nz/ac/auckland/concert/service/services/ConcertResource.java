@@ -630,6 +630,63 @@ public class ConcertResource {
 
 	private void deleteReservationUponExpiry(Long reservationID, Long bookingID, String username){
 
+		/*Thread thread = new Thread(){
+		    public void run(){
+		    	
+				  try {
+						Thread.sleep(ConcertApplication.RESERVATION_EXPIRY_TIME_IN_SECONDS * 1000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+		    	
+		    	System.out.println("Checking wether reservation is confirmed!");
+
+				EntityManager em = null;
+				try {
+					em = PersistenceManager.instance().createEntityManager();
+
+					em.getTransaction().begin();
+					
+					Booking booking = em.find(Booking.class, bookingID);
+
+					Reservation storedReservation = em.find(Reservation.class, reservationID);
+
+					em.getTransaction().commit();
+					
+					if(!storedReservation.getStatus()){
+
+						em.getTransaction().begin();
+
+						em.remove(storedReservation);
+
+						em.remove(booking);
+
+						User user = em.find(User.class, username);
+
+						user.removeReservation(storedReservation);
+
+						em.persist(user);
+
+						System.out.println("Reservation expired! Id = " + reservationID);
+
+						em.getTransaction().commit();
+
+					}
+
+				} finally {
+					if (em != null && em.isOpen()) {
+						em.close ();
+					}
+				}
+		      
+		      
+		      
+		    }
+		  };
+
+		  thread.start();*/
+		
 		Timer timer = new Timer();
 		timer.schedule(new TimerTask() {
 
@@ -649,7 +706,7 @@ public class ConcertResource {
 					Reservation storedReservation = em.find(Reservation.class, reservationID);
 
 					em.getTransaction().commit();
-
+					
 					if(!storedReservation.getStatus()){
 
 						em.getTransaction().begin();
@@ -677,7 +734,7 @@ public class ConcertResource {
 				}
 
 			}
-		}, ConcertApplication.RESERVATION_EXPIRY_TIME_IN_SECONDS);
+		}, ConcertApplication.RESERVATION_EXPIRY_TIME_IN_SECONDS * 1000);
 
 	}
 

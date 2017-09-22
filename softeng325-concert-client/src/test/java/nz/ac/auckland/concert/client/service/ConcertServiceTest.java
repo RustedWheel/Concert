@@ -337,7 +337,7 @@ public class ConcertServiceTest {
 		}
 	}	
 	
-	/*@Test*/
+	@Test
 	public void testConfirmBookingWithExpiredReservation() {
 		try {
 			final int numberOfSeatsToBook = 12;
@@ -370,7 +370,7 @@ public class ConcertServiceTest {
 		}
 	}
 	
-	/*@Test*/
+	@Test
 	public void testConfirmReservationWithoutRegisteredCreditCard() {
 		try {
 			final int numberOfSeatsToBook = 6;
