@@ -6,7 +6,10 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -15,6 +18,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.CookieParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotAuthorizedException;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -28,6 +32,9 @@ import javax.ws.rs.core.Response.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import nz.ac.auckland.concert.common.dto.BookingDTO;
+import nz.ac.auckland.concert.common.dto.ReservationDTO;
+import nz.ac.auckland.concert.common.dto.SeatDTO;
 import nz.ac.auckland.concert.common.dto.UserDTO;
 import nz.ac.auckland.concert.common.message.Messages;
 import nz.ac.auckland.concert.common.types.PriceBand;
@@ -52,39 +59,36 @@ public class ConcertResource {
 
 	private static Logger _logger = LoggerFactory
 			.getLogger(ConcertResource.class);
-	private EntityManager _em = PersistenceManager.instance().createEntityManager();
-	
-	// AWS S3 access credentials for concert images.
-	private static final String AWS_ACCESS_KEY_ID = "AKIAIDYKYWWUZ65WGNJA";
-	private static final String AWS_SECRET_ACCESS_KEY = "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";
-
-	// Name of the S3 bucket that stores images.
-	private static final String AWS_BUCKET = "concert.aucklanduni.ac.nz";
-
-	private static final String FILE_SEPARATOR = System
-			.getProperty("file.separator");
-	private static final String USER_DIRECTORY = System
-			.getProperty("user.home");
-	private static final String DOWNLOAD_DIRECTORY = USER_DIRECTORY
-			+ FILE_SEPARATOR + "images";
 
 	@GET
 	@Produces(javax.ws.rs.core.MediaType.APPLICATION_XML)
 	public Response retrieveConcerts() {
 
-		_em.getTransaction().begin();
-		TypedQuery<Concert> concertQuery = _em.createQuery("select c from " + Concert.class.getName() +  " c", Concert.class);
-		List<Concert> concerts = concertQuery.getResultList();
-		_em.getTransaction().commit();
+		EntityManager em = null;
+		ResponseBuilder response = null;
+		try {
+			em = PersistenceManager.instance().createEntityManager();
+			em.getTransaction().begin();
 
-		List<nz.ac.auckland.concert.common.dto.ConcertDTO> concertDTOs = new ArrayList<nz.ac.auckland.concert.common.dto.ConcertDTO>();
+			TypedQuery<Concert> concertQuery = em.createQuery("select c from " + Concert.class.getName() +  " c", Concert.class);
+			List<Concert> concerts = concertQuery.getResultList();
 
-		for(Concert concert :concerts){
-			concertDTOs.add(ConcertMapper.toDto(concert));
+			em.getTransaction().commit();
+
+			List<nz.ac.auckland.concert.common.dto.ConcertDTO> concertDTOs = new ArrayList<nz.ac.auckland.concert.common.dto.ConcertDTO>();
+
+			for(Concert concert :concerts){
+				concertDTOs.add(ConcertMapper.toDto(concert));
+			}
+
+			GenericEntity<List<nz.ac.auckland.concert.common.dto.ConcertDTO>> entity = new GenericEntity<List<nz.ac.auckland.concert.common.dto.ConcertDTO>>(concertDTOs) {};
+			response = Response.ok(entity);
+
+		} finally {
+			if (em != null && em.isOpen()) {
+				em.close ();
+			}
 		}
-
-		GenericEntity<List<nz.ac.auckland.concert.common.dto.ConcertDTO>> entity = new GenericEntity<List<nz.ac.auckland.concert.common.dto.ConcertDTO>>(concertDTOs) {};
-		ResponseBuilder response = Response.ok(entity);
 
 		return response.build();
 	}
@@ -94,19 +98,32 @@ public class ConcertResource {
 	@Produces(javax.ws.rs.core.MediaType.APPLICATION_XML)
 	public Response retrievePerformers() {
 
-		_em.getTransaction().begin();
-		TypedQuery<Performer> performerQuery = _em.createQuery("select p from " + Performer.class.getName() +  " p", Performer.class);
-		List<Performer> performers = performerQuery.getResultList();
-		_em.getTransaction().commit();
+		EntityManager em = null;
+		ResponseBuilder response = null;
+		try {
 
-		List<nz.ac.auckland.concert.common.dto.PerformerDTO> performerDTOs = new ArrayList<nz.ac.auckland.concert.common.dto.PerformerDTO>();
+			em = PersistenceManager.instance().createEntityManager();
 
-		for(Performer performer :performers){
-			performerDTOs.add(PerformerMapper.toDto(performer));
+			em.getTransaction().begin();
+
+			TypedQuery<Performer> performerQuery = em.createQuery("select p from " + Performer.class.getName() +  " p", Performer.class);
+			List<Performer> performers = performerQuery.getResultList();
+			em.getTransaction().commit();
+
+			List<nz.ac.auckland.concert.common.dto.PerformerDTO> performerDTOs = new ArrayList<nz.ac.auckland.concert.common.dto.PerformerDTO>();
+
+			for(Performer performer :performers){
+				performerDTOs.add(PerformerMapper.toDto(performer));
+			}
+
+			GenericEntity<List<nz.ac.auckland.concert.common.dto.PerformerDTO>> entity = new GenericEntity<List<nz.ac.auckland.concert.common.dto.PerformerDTO>>(performerDTOs){};
+			response = Response.ok(entity);
+
+		} finally {
+			if (em != null && em.isOpen()) {
+				em.close ();
+			}
 		}
-
-		GenericEntity<List<nz.ac.auckland.concert.common.dto.PerformerDTO>> entity = new GenericEntity<List<nz.ac.auckland.concert.common.dto.PerformerDTO>>(performerDTOs){};
-		ResponseBuilder response = Response.ok(entity);
 
 		return response.build();
 	}
@@ -125,44 +142,56 @@ public class ConcertResource {
 					.build());
 		}
 
-		_em.getTransaction().begin();
+		EntityManager em = null;
+		ResponseBuilder response = null;
+		try {
 
-		User searchUser = _em.find(User.class, dtoUser.getUsername());
+			em = PersistenceManager.instance().createEntityManager();
 
-		_em.getTransaction().commit();
+			em.getTransaction().begin();
 
-		if(searchUser != null){
-			_logger.debug(Messages.CREATE_USER_WITH_NON_UNIQUE_NAME);
-			throw new BadRequestException(Response
-					.status (Status.BAD_REQUEST)
-					.entity (Messages.CREATE_USER_WITH_NON_UNIQUE_NAME)
-					.build());
+			User searchUser = em.find(User.class, dtoUser.getUsername());
+
+			em.getTransaction().commit();
+
+			if(searchUser != null){
+				_logger.debug(Messages.CREATE_USER_WITH_NON_UNIQUE_NAME);
+				throw new BadRequestException(Response
+						.status (Status.BAD_REQUEST)
+						.entity (Messages.CREATE_USER_WITH_NON_UNIQUE_NAME)
+						.build());
+			}
+
+			User user = UserMapper.toDomainModel(dtoUser);
+
+			NewCookie cookie = makeCookie(null);
+
+			Token userToken = new Token(cookie.getValue(), user);
+
+			user.setToken(userToken);
+
+			em.getTransaction().begin();
+
+			em.persist(user);
+
+			em.getTransaction().commit();
+
+			_logger.debug("Created User with username: " + user.getUsername());
+
+			response = Response.created(URI.create("/concerts/users/" + user.getUsername()));
+
+			response.cookie(cookie);
+
+		} finally {
+			if (em != null && em.isOpen()) {
+				em.close ();
+			}
 		}
-
-		User user = UserMapper.toDomainModel(dtoUser);
-
-		NewCookie cookie = makeCookie(null);
-
-		Token userToken = new Token(cookie.getValue(), user);
-
-		user.setToken(userToken);
-
-		_em.getTransaction().begin();
-
-		_em.persist(user);
-
-		_em.getTransaction().commit();
-
-		_logger.debug("Created User with username: " + user.getUsername());
-
-		ResponseBuilder response = Response.created(URI.create("/concerts/users/" + user.getUsername()));
-
-		response.cookie(cookie);
 
 		return response.build();
 	}
 
-	
+
 	@POST
 	@Path("authenticate")
 	@Consumes(javax.ws.rs.core.MediaType.APPLICATION_XML)
@@ -177,32 +206,46 @@ public class ConcertResource {
 					.build());
 		}
 
-		_em.getTransaction().begin();
+		EntityManager em = null;
+		ResponseBuilder response = null;
+		try {
 
-		User searchUser = _em.find(User.class, dtoUser.getUsername());
+			em = PersistenceManager.instance().createEntityManager();
 
-		_em.getTransaction().commit();
+			em.getTransaction().begin();
 
-		if(searchUser == null){
-			throw new BadRequestException(Response
-					.status (Status.BAD_REQUEST)
-					.entity (Messages.AUTHENTICATE_NON_EXISTENT_USER)
-					.build());
+			User searchUser = em.find(User.class, dtoUser.getUsername());
+
+			em.getTransaction().commit();
+
+			if(searchUser == null){
+				throw new NotFoundException(Response
+						.status (Status.NOT_FOUND)
+						.entity (Messages.AUTHENTICATE_NON_EXISTENT_USER)
+						.build());
+			}
+
+			if(!searchUser.getPassword().equals(dtoUser.getPassword())){
+				throw new BadRequestException(Response
+						.status (Status.BAD_REQUEST)
+						.entity (Messages.AUTHENTICATE_USER_WITH_ILLEGAL_PASSWORD)
+						.build());
+			}
+
+			response = Response.ok();
+
+			response.cookie(makeCookie(searchUser.getToken().getTokenValue()));
+			System.out.print("Authentication token value:" + searchUser.getToken().getTokenValue());
+
+			response.entity(UserMapper.toDto(searchUser));
+
+		} finally {
+			if (em != null && em.isOpen()) {
+				em.close ();
+			}
 		}
 
-		if(!searchUser.getPassword().equals(dtoUser.getPassword())){
-			throw new BadRequestException(Response
-					.status (Status.BAD_REQUEST)
-					.entity (Messages.AUTHENTICATE_USER_WITH_ILLEGAL_PASSWORD)
-					.build());
-		}
-
-		ResponseBuilder response = Response.ok();
-
-		response.cookie(makeCookie(searchUser.getToken().getTokenValue()));
-		System.out.print("Authentication token value:" + searchUser.getToken().getTokenValue());
-
-		return response.entity(UserMapper.toDto(searchUser)).build();
+		return response.build();
 	}
 
 
@@ -213,29 +256,40 @@ public class ConcertResource {
 	public Response registerCreditCard(nz.ac.auckland.concert.common.dto.CreditCardDTO creditCardDTO, @CookieParam("clientUsername") Cookie token) {
 
 		Token storedToken = authenticateToken(token);
-		
-		_em.getTransaction().begin();
-		
-		User user = storedToken.getUser();
-		
-		_logger.debug("Found user with username " + user.getUsername());
-		
-		for(CreditCard card: user.getCreditcard()){
-			_logger.debug("Found user with user credit card: " + card.getNumber());
-		}
-		
-		user.addCreditcard(CreditCardMapper.toDomainModel(creditCardDTO));
-		
-		_em.persist(user);
-		
-		_em.getTransaction().commit();
 
-		ResponseBuilder response = Response.noContent();
+		EntityManager em = null;
+		ResponseBuilder response = null;
+		try {
+
+			em = PersistenceManager.instance().createEntityManager();
+			em.getTransaction().begin();
+
+			User user = storedToken.getUser();
+
+			_logger.debug("Found user with username " + user.getUsername());
+
+			for(CreditCard card: user.getCreditcard()){
+				_logger.debug("Found user with user credit card: " + card.getNumber());
+			}
+
+			user.addCreditcard(CreditCardMapper.toDomainModel(creditCardDTO));
+
+			em.merge(user);
+
+			em.getTransaction().commit();
+
+			response = Response.noContent();
+
+		} finally {
+			if (em != null && em.isOpen()) {
+				em.close ();
+			}
+		}
 
 		return response.build();
 	}
-	
-	
+
+
 	@POST
 	@Path("reservation")
 	@Consumes(javax.ws.rs.core.MediaType.APPLICATION_XML)
@@ -243,103 +297,262 @@ public class ConcertResource {
 	public Response makeReservation(nz.ac.auckland.concert.common.dto.ReservationRequestDTO dtoReservationRequest, @CookieParam("clientUsername") Cookie token) {
 
 		Token storedToken = authenticateToken(token);
-		
-		if(dtoReservationRequest.getConcertId() == null || dtoReservationRequest.getDate() == null || dtoReservationRequest.getNumberOfSeats() <= 0 || dtoReservationRequest.getSeatType() == null){
-			throw new BadRequestException(Response
-					.status (Status.BAD_REQUEST)
-					.entity (Messages.RESERVATION_REQUEST_WITH_MISSING_FIELDS)
-					.build());
-		}
-		
-		Set<Seat> bookedSeats = new HashSet<Seat>();
-		Set<Seat> avilableSeats = new HashSet<Seat>();
-		Set<Seat> reservedSeats = new HashSet<Seat>();
-		
-		_em.getTransaction().begin();
-		
-		Concert concert = _em.find(Concert.class, dtoReservationRequest.getConcertId());
-		
-		TypedQuery<Booking> bookingQuery = _em.createQuery("select c from " + Booking.class.getName() +  " c where CONCERT_CID = (:concertID)", Booking.class);
-		bookingQuery.setParameter("concertID", dtoReservationRequest.getConcertId());
-		List<Booking> bookings = bookingQuery.getResultList();
-		
-		User user = storedToken.getUser();
-		
-		_em.getTransaction().commit();
-		
-		if(!concert.getDates().contains(dtoReservationRequest.getDate())){
-			throw new BadRequestException(Response
-					.status (Status.BAD_REQUEST)
-					.entity (Messages.CONCERT_NOT_SCHEDULED_ON_RESERVATION_DATE)
-					.build());
-		}
-		
-		
-		for(Booking booking : bookings){
-			for(Seat bookedSeat : booking.getSeats()){
-				bookedSeats.add(bookedSeat);
+
+		EntityManager em = null;
+		ResponseBuilder response = null;
+		try {
+
+			em = PersistenceManager.instance().createEntityManager();
+
+
+			if(dtoReservationRequest.getConcertId() == null || dtoReservationRequest.getDate() == null || dtoReservationRequest.getNumberOfSeats() <= 0 || dtoReservationRequest.getSeatType() == null){
+				throw new BadRequestException(Response
+						.status (Status.BAD_REQUEST)
+						.entity (Messages.RESERVATION_REQUEST_WITH_MISSING_FIELDS)
+						.build());
 			}
-		}
-		
-		Set<SeatRow> seatRows = TheatreLayout.getRowsForPriceBand(dtoReservationRequest.getSeatType());
-		
-		for(SeatRow row : seatRows){
-			int number_of_rows = TheatreLayout.getNumberOfSeatsForRow(row);
-			
-			for(int i = 1; i < number_of_rows + 1; i++){
-				_logger.debug("Created seat, row: " + row.name() + " number: " + i);
-				Seat seat = new Seat(row, new SeatNumber(i));
-				
-				if(!bookedSeats.contains(seat)){
-					avilableSeats.add(seat);
+
+			Set<Seat> bookedSeats = new HashSet<Seat>();
+			Set<Seat> avilableSeats = new HashSet<Seat>();
+			Set<Seat> reservedSeats = new HashSet<Seat>();
+
+			em.getTransaction().begin();
+
+			Concert concert = em.find(Concert.class, dtoReservationRequest.getConcertId());
+
+			TypedQuery<Booking> bookingQuery = em.createQuery("select c from " + Booking.class.getName() +  " c where CONCERT_CID = (:concertID)", Booking.class);
+			bookingQuery.setParameter("concertID", dtoReservationRequest.getConcertId());
+			List<Booking> bookings = bookingQuery.getResultList();
+
+			User user = storedToken.getUser();
+
+			em.getTransaction().commit();
+
+			if(!concert.getDates().contains(dtoReservationRequest.getDate())){
+				throw new BadRequestException(Response
+						.status (Status.BAD_REQUEST)
+						.entity (Messages.CONCERT_NOT_SCHEDULED_ON_RESERVATION_DATE)
+						.build());
+			}
+
+
+			for(Booking booking : bookings){
+				for(Seat bookedSeat : booking.getSeats()){
+					bookedSeats.add(bookedSeat);
 				}
 			}
-		}
-		
-		if(avilableSeats.size() < dtoReservationRequest.getNumberOfSeats()){
-			throw new BadRequestException(Response
-					.status (Status.BAD_REQUEST)
-					.entity (Messages.INSUFFICIENT_SEATS_AVAILABLE_FOR_RESERVATION)
-					.build());
-		}
-		
-		int seatsToReserve = dtoReservationRequest.getNumberOfSeats();
-		for(Seat seat : avilableSeats){
-			reservedSeats.add(seat);
-			seatsToReserve--;
-			if(seatsToReserve == 0){
-				break;
+
+			Set<SeatRow> seatRows = TheatreLayout.getRowsForPriceBand(dtoReservationRequest.getSeatType());
+
+			for(SeatRow row : seatRows){
+				int number_of_rows = TheatreLayout.getNumberOfSeatsForRow(row);
+
+				for(int i = 1; i < number_of_rows + 1; i++){
+					/*_logger.debug("Created seat, row: " + row.name() + " number: " + i);*/
+					Seat seat = new Seat(row, new SeatNumber(i));
+
+					if(!bookedSeats.contains(seat)){
+						avilableSeats.add(seat);
+					}
+				}
+			}
+
+			if(avilableSeats.size() < dtoReservationRequest.getNumberOfSeats()){
+				throw new BadRequestException(Response
+						.status (Status.BAD_REQUEST)
+						.entity (Messages.INSUFFICIENT_SEATS_AVAILABLE_FOR_RESERVATION)
+						.build());
+			}
+
+			int seatsToReserve = dtoReservationRequest.getNumberOfSeats();
+			for(Seat seat : avilableSeats){
+				reservedSeats.add(seat);
+				seatsToReserve--;
+				if(seatsToReserve == 0){
+					break;
+				}
+			}
+
+			Reservation reservation = new Reservation(dtoReservationRequest.getSeatType(), concert, dtoReservationRequest.getDate() , reservedSeats);
+
+			Booking newBooking = new Booking(concert, dtoReservationRequest.getDate(),reservedSeats ,dtoReservationRequest.getSeatType());
+
+			em.getTransaction().begin();
+
+			em.persist(reservation);
+
+			em.persist(newBooking);
+
+			user.addReservation(reservation);
+
+			em.merge(user);
+
+			em.getTransaction().commit();
+
+			ReservationDTO dtoReservation = ReservationMapper.toDto(reservation, dtoReservationRequest);
+
+			response = Response.ok().entity(dtoReservation);
+
+			deleteReservationUponExpiry(reservation.getId(), newBooking.getId(), user.getUsername());
+
+		} finally {
+			if (em != null && em.isOpen()) {
+				em.close ();
 			}
 		}
-		
-		/*Reservation reservation = new Reservation(Long id, dtoReservationRequest.getSeatType(), concert, dtoReservationRequest.getDate() , reservedSeats);*/
-		
-		
-		
-		
-		/*_em.getTransaction().begin();
-		
-		User user = storedToken.getUser();
-		
-		_logger.debug("Found user with username " + user.getUsername());
-		
-		for(CreditCard card: user.getCreditcard()){
-			_logger.debug("Found user with user credit card: " + card.getNumber());
-		}
-		
-		user.addCreditcard(CreditCardMapper.toDomainModel(creditCardDTO));
-		
-		_em.persist(user);
-		
-		_em.getTransaction().commit();*/
-
-		ResponseBuilder response = Response.ok();
 
 		return response.build();
 	}
 
+
+	/**
+	 * Confirms a reservation. Prior to calling this method, a successful 
+	 * reservation request should have been made via a call to reserveSeats(),
+	 * returning a ReservationDTO. 
+	 *  
+	 * @param reservation a description of the reservation to confirm.
+	 * 
+	 * @throws ServiceException in response to any of the following conditions.
+	 * The exception's message is defined in 
+	 * class nz.ac.auckland.concert.common.Messages.
+	 * 
+	 * Condition: the request is made by an unauthenticated user.
+	 * Messages.UNAUTHENTICATED_REQUEST
+	 * 
+	 * Condition: the request includes an authentication token but it's not
+	 * recognised by the remote service.
+	 * Messages.BAD_AUTHENTICATON_TOKEN
+	 * 
+	 * Condition: the reservation has expired.
+	 * Messages.EXPIRED_RESERVATION
+	 * 
+	 * Condition: the user associated with the request doesn't have a credit
+	 * card registered with the remote service.
+	 * Messages.CREDIT_CARD_NOT_REGISTERED
+	 * 
+	 * Condition: there is a communication error.
+	 * Messages.SERVICE_COMMUNICATION_ERROR
+	 * 
+	 */
 	
-	
+	@POST
+	@Path("reservation/confirm")
+	@Consumes(javax.ws.rs.core.MediaType.APPLICATION_XML)
+	@Produces(javax.ws.rs.core.MediaType.APPLICATION_XML)
+	public Response confirmReservation(nz.ac.auckland.concert.common.dto.ReservationDTO reservation, @CookieParam("clientUsername") Cookie token) {
+
+		_logger.debug("Start to confirm reservation: " + reservation.getId());
+
+		Token storedToken = authenticateToken(token);
+
+		EntityManager em = null;
+		ResponseBuilder response = null;
+		try {
+
+			em = PersistenceManager.instance().createEntityManager();
+
+			em.getTransaction().begin();
+
+			Reservation storedReservation = em.find(Reservation.class, reservation.getId());
+
+			Set<CreditCard> card = storedToken.getUser().getCreditcard();
+
+			em.getTransaction().commit();
+			
+			if(card == null){
+				_logger.debug(Messages.CREDIT_CARD_NOT_REGISTERED);
+				throw new BadRequestException(Response
+						.status (Status.BAD_REQUEST)
+						.entity (Messages.CREDIT_CARD_NOT_REGISTERED)
+						.build());
+			} else if(card.size() <= 0) {
+				_logger.debug(Messages.CREDIT_CARD_NOT_REGISTERED);
+				throw new BadRequestException(Response
+						.status (Status.BAD_REQUEST)
+						.entity (Messages.CREDIT_CARD_NOT_REGISTERED)
+						.build());
+			}
+
+			if(storedReservation == null){
+				_logger.debug(Messages.EXPIRED_RESERVATION);
+				throw new NotFoundException(Response
+						.status (Status.NOT_FOUND)
+						.entity (Messages.EXPIRED_RESERVATION)
+						.build());
+			}
+
+			storedReservation.setStatus(true);
+
+			em.getTransaction().begin();
+
+			em.merge(storedReservation);
+
+			em.getTransaction().commit();
+
+			_logger.debug("Reservation " + reservation.getId() + " confirmed!");
+
+			response = Response.noContent();
+
+		} finally {
+			if (em != null && em.isOpen()) {
+				em.close ();
+			}
+		}
+
+		return response.build();
+	}
+
+
+	@GET
+	@Path("bookings")
+	@Produces(javax.ws.rs.core.MediaType.APPLICATION_XML)
+	public Response getBookings(@CookieParam("clientUsername") Cookie token) {
+
+		Token storedToken = authenticateToken(token);
+		EntityManager em = null;
+		ResponseBuilder response = null;
+		try {
+
+			em = PersistenceManager.instance().createEntityManager();
+
+			em.getTransaction().begin();
+
+			User user = storedToken.getUser();
+
+			Set<Reservation> reservations = user.getReservations();
+
+			em.getTransaction().commit();
+			
+			Set<BookingDTO> dtoBookings = new HashSet<BookingDTO>();
+
+			for(Reservation reservation : reservations){
+
+				Set<SeatDTO> dtoSeats = new HashSet<SeatDTO>();
+
+				for(Seat seat : reservation.getSeats()){
+					dtoSeats.add(SeatMapper.toDto(seat));
+				}
+
+				BookingDTO BookingDTO = new BookingDTO(reservation.getConcert().getId(), reservation.getConcert().getTitle(), reservation.getDate(), dtoSeats, reservation.getSeatType());
+				dtoBookings.add(BookingDTO);
+
+			}
+			
+			GenericEntity<Set<BookingDTO>> entity = new GenericEntity<Set<BookingDTO>>(dtoBookings) {};
+
+			response = Response.ok().entity(entity);
+
+		} finally {
+			if (em != null && em.isOpen()) {
+				em.close ();
+			}
+		}
+
+		return response.build();
+	}
+
+
+
 	/**
 	 * Helper method that can be called from every service method to generate a 
 	 * NewCookie instance, if necessary, based on the clientId parameter.
@@ -361,7 +574,7 @@ public class ConcertResource {
 		if(cookieValue != null){
 			value = cookieValue;
 		} else {
-			
+
 			value = UUID.randomUUID().toString();
 		}
 
@@ -371,33 +584,101 @@ public class ConcertResource {
 
 		return newCookie;
 	}
-	
+
+
+
 	private Token authenticateToken(Cookie cookieToken){
 
-		if(cookieToken == null){
-			_logger.debug("Token is null");
-			
-			throw new NotAuthorizedException(Response
-					.status (Status.UNAUTHORIZED)
-					.entity (Messages.UNAUTHENTICATED_REQUEST)
-					.build());
+		EntityManager em = null;
+		Token storedToken = null;
+		try {
+
+			em = PersistenceManager.instance().createEntityManager();
+
+			if(cookieToken == null){
+				_logger.debug("Token is null");
+
+				throw new NotAuthorizedException(Response
+						.status (Status.UNAUTHORIZED)
+						.entity (Messages.UNAUTHENTICATED_REQUEST)
+						.build());
+			}
+
+			em.getTransaction().begin();
+
+			storedToken = em.find(Token.class, cookieToken.getValue());
+
+			em.getTransaction().commit();
+
+			if(!cookieToken.getName().equals(Config.CLIENT_COOKIE) || storedToken == null){
+
+				throw new NotAuthorizedException(Response
+						.status (Status.UNAUTHORIZED)
+						.entity (Messages.BAD_AUTHENTICATON_TOKEN)
+						.build());
+			}
+
+		} finally {
+			if (em != null && em.isOpen()) {
+				em.close ();
+			}
 		}
 
-		_em.getTransaction().begin();
-
-		Token storedToken = _em.find(Token.class, cookieToken.getValue());
-
-		_em.getTransaction().commit();
-
-		if(!cookieToken.getName().equals(Config.CLIENT_COOKIE) || storedToken == null){
-
-			throw new NotAuthorizedException(Response
-					.status (Status.UNAUTHORIZED)
-					.entity (Messages.BAD_AUTHENTICATON_TOKEN)
-					.build());
-		}
-		
 		return storedToken;
+	}
+
+
+	private void deleteReservationUponExpiry(Long reservationID, Long bookingID, String username){
+
+		Timer timer = new Timer();
+		timer.schedule(new TimerTask() {
+
+			@Override
+			public void run() {
+
+				System.out.println("Checking wether reservation is confirmed!");
+
+				EntityManager em = null;
+				try {
+					em = PersistenceManager.instance().createEntityManager();
+
+					em.getTransaction().begin();
+					
+					Booking booking = em.find(Booking.class, bookingID);
+
+					Reservation storedReservation = em.find(Reservation.class, reservationID);
+
+					em.getTransaction().commit();
+
+					if(!storedReservation.getStatus()){
+
+						em.getTransaction().begin();
+
+						em.remove(storedReservation);
+
+						em.remove(booking);
+
+						User user = em.find(User.class, username);
+
+						user.removeReservation(storedReservation);
+
+						em.persist(user);
+
+						System.out.println("Reservation expired! Id = " + reservationID);
+
+						em.getTransaction().commit();
+
+					}
+
+				} finally {
+					if (em != null && em.isOpen()) {
+						em.close ();
+					}
+				}
+
+			}
+		}, ConcertApplication.RESERVATION_EXPIRY_TIME_IN_SECONDS);
+
 	}
 
 }

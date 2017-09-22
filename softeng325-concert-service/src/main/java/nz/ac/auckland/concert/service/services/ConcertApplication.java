@@ -81,6 +81,4 @@ public class ConcertApplication extends Application {
 		return _singletons;
 	}
 
-
-
 }

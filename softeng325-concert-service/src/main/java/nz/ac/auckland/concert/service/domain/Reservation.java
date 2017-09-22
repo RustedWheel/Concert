@@ -13,6 +13,7 @@ import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
@@ -46,7 +47,8 @@ public class Reservation {
 	@Column( nullable= false, name = "PRICEBAND" )
 	private PriceBand _seatType;
 	
-	@ManyToOne
+	@ManyToOne(fetch = FetchType.LAZY )
+	@JoinColumn(name="CONCERT_CID",nullable = false )
 	private Concert _concert;
 	
 	@Column(nullable = false, name = "DATE" )
@@ -58,14 +60,17 @@ public class Reservation {
 	@Column( name = "SEAT" )
 	private Set<Seat> _seats;
 	
+	@Column(nullable = false, name = "Confirmed" )
+	private boolean _confirmed;
+	
 	public Reservation() {}
 	
-	public Reservation(Long id, PriceBand seatType, Concert concert, LocalDateTime date , Set<Seat> seats) {
-		_id = id;
+	public Reservation(PriceBand seatType, Concert concert, LocalDateTime date , Set<Seat> seats) {
 		_seatType = seatType;
 		_concert = concert;
 		_date = date;
 		_seats = new HashSet<Seat>(seats);
+		_confirmed = false;
 	}
 	
 	public Long getId() {
@@ -86,6 +91,14 @@ public class Reservation {
 	
 	public Set<Seat> getSeats() {
 		return Collections.unmodifiableSet(_seats);
+	}
+	
+	public boolean getStatus() {
+		return _confirmed;
+	}
+	
+	public void setStatus(boolean status) {
+		_confirmed = status;
 	}
 	
 	@Override

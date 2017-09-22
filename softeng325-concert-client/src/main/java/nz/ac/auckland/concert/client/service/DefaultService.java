@@ -28,6 +28,7 @@ import javax.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -57,8 +58,8 @@ public class DefaultService implements ConcertService {
 	private static String WEB_SERVICE_URI = "http://localhost:10000/services/concerts";
 
 	// AWS S3 access credentials for concert images.
-	private static final String AWS_ACCESS_KEY_ID = "AKIAIDYKYWWUZ65WGNJA";
-	private static final String AWS_SECRET_ACCESS_KEY = "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";
+	private static final String AWS_ACCESS_KEY_ID = "";
+	private static final String AWS_SECRET_ACCESS_KEY = "";
 
 	// Name of the S3 bucket that stores images.
 	private static final String AWS_BUCKET = "concert.aucklanduni.ac.nz";
@@ -127,7 +128,7 @@ public class DefaultService implements ConcertService {
 			String errorMessage = response.readEntity (String.class);
 			throw new ServiceException(errorMessage);
 		case 201: 
-			System.out.println("Successfully creatd");
+			/*System.out.println("Successfully creatd");*/
 			break;
 		}
 
@@ -151,6 +152,8 @@ public class DefaultService implements ConcertService {
 		case 400:
 			String errorMessage = response.readEntity (String.class);
 			throw new ServiceException(errorMessage);
+		case 404:
+			throw new ServiceException(response.readEntity (String.class));
 		case 200: 
 			System.out.println("Authentication success");
 			user = response.readEntity(UserDTO.class);
@@ -189,72 +192,81 @@ public class DefaultService implements ConcertService {
 				.standard()
 				.withS3Client(s3)
 				.build();
-		
-		File f = null;
-		
+
+		File f = new File(DOWNLOAD_DIRECTORY + FILE_SEPARATOR + name);				
 		try {
-
-			f = new File(DOWNLOAD_DIRECTORY + FILE_SEPARATOR + name);				
-			try {
-				Download xfer = mgr.download(AWS_BUCKET, name, f);
-
-			} catch (AmazonServiceException e) {
-				throw new ServiceException(Messages.NO_IMAGE_FOR_PERFORMER);
-			}
-
-
+			Download xfer = mgr.download(AWS_BUCKET, name, f);
+			xfer.waitForCompletion();
 		} catch (AmazonServiceException e) {
+			throw new ServiceException(Messages.NO_IMAGE_FOR_PERFORMER);
+		} catch (AmazonClientException e) {
 			throw new ServiceException(Messages.SERVICE_COMMUNICATION_ERROR);
-		}
-		try {
-
-			Thread.sleep(5000);
-			mgr.shutdownNow();
-
-		} catch (InterruptedException e){
+		} catch (InterruptedException e) {
 			e.printStackTrace();
+			System.exit(1);
 		}
-		
+
+
+		mgr.shutdownNow();
+
 		Image image = null;
-		
+
 		try {
 			image = ImageIO.read(f);
 		} catch (IOException e) {
 			throw new ServiceException(Messages.NO_IMAGE_FOR_PERFORMER);
 		}
-
-
+		
 		return image;
 	}
 
 	@Override
 	public ReservationDTO reserveSeats(ReservationRequestDTO reservationRequest) throws ServiceException {
-		
+
 		Client client = ClientBuilder.newClient();
 
 		Builder builder = client.target(WEB_SERVICE_URI + "/reservation").request();
 		addCookieToInvocation(builder);
 		Response response = builder.post(Entity.xml(reservationRequest));
-		
+
 		ReservationDTO dtoReservation = new ReservationDTO();
 
 		switch (response.getStatus()){
-		case 401:
+		case 400:
 			String errorMessage = response.readEntity (String.class);
 			throw new ServiceException(errorMessage);
+		case 401:
+			throw new ServiceException(response.readEntity (String.class));
 		case 200:
 			dtoReservation = response.readEntity(ReservationDTO.class);
 		}
 
 		response.close();
 		client.close();
-		
+
 		return dtoReservation;
 	}
 
 	@Override
 	public void confirmReservation(ReservationDTO reservation) throws ServiceException {
-		// TODO Auto-generated method stub
+		Client client = ClientBuilder.newClient();
+
+		Builder builder = client.target(WEB_SERVICE_URI + "/reservation/confirm").request();
+		addCookieToInvocation(builder);
+		Response response = builder.post(Entity.xml(reservation));
+
+		switch (response.getStatus()){
+		case 400:
+			String errorMessage = response.readEntity (String.class);
+			throw new ServiceException(errorMessage);
+		case 401:
+			throw new ServiceException(response.readEntity (String.class));
+		case 404:
+			throw new ServiceException(response.readEntity (String.class));
+		}
+
+		response.close();
+		client.close();
 
 	}
 
@@ -279,8 +291,27 @@ public class DefaultService implements ConcertService {
 
 	@Override
 	public Set<BookingDTO> getBookings() throws ServiceException {
-		// TODO Auto-generated method stub
-		return null;
+
+		Client client = ClientBuilder.newClient();
+
+		Builder builder = client.target(WEB_SERVICE_URI + "/bookings").request();
+		addCookieToInvocation(builder);
+		Response response = builder.get();
+
+		Set<BookingDTO> dtoBookings = new HashSet<BookingDTO>();
+
+		switch (response.getStatus()){
+		case 401:
+			String errorMessage = response.readEntity (String.class);
+			throw new ServiceException(errorMessage);
+		case 200:
+			dtoBookings = response.readEntity(new GenericType<Set<nz.ac.auckland.concert.common.dto.BookingDTO>>(){});
+		}
+
+		response.close();
+		client.close();
+
+		return dtoBookings;
 	}
 
 	@Override

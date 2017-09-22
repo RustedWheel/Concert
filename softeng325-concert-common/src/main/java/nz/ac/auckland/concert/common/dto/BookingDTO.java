@@ -34,19 +34,14 @@ import nz.ac.auckland.concert.common.types.PriceBand;
 @XmlAccessorType(XmlAccessType.FIELD)
 public class BookingDTO {
 
-	@XmlElement(name="concertId")
 	private Long _concertId;
 	
-	@XmlElement(name="concertTitle")
 	private String _concertTitle;
 	
-	@XmlElement(name="dateTime")
 	private LocalDateTime _dateTime;
 	
-	@XmlElement(name="seats")
 	private Set<SeatDTO> _seats;
 	
-	@XmlElement(name="priceBand")
 	private PriceBand _priceBand;
 
 	public BookingDTO() {

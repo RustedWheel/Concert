@@ -9,6 +9,7 @@ import javax.persistence.Embeddable;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
@@ -55,14 +56,15 @@ public class Booking {
 	@Column( nullable= false, name="BID")
 	private Long _bid;
 	
-	@ManyToOne
-	private Concert concert;
+	@ManyToOne(fetch=FetchType.LAZY)
+	@JoinColumn(name="CONCERT_CID",nullable = false )
+	private Concert _concert;
 	
 	@Column( nullable= false, name = "DATE" )
 	@Convert(converter = LocalDateTimeConverter.class)
 	private LocalDateTime _dateTime;
 	
-	@ElementCollection
+	@ElementCollection(fetch=FetchType.LAZY)
 	@CollectionTable(name = "BOOKING_SEATS",joinColumns= @JoinColumn( name = "BID" ) )
 	@Column( name = "SEAT" )
 	private Set<Seat> _seats;
@@ -74,14 +76,22 @@ public class Booking {
 	public Booking() {
 	}
 
-	public Booking( LocalDateTime dateTime, Set<Seat> seats, PriceBand priceBand) {
+	public Booking( Concert concert, LocalDateTime dateTime, Set<Seat> seats, PriceBand priceBand) {
 		
 		_dateTime = dateTime;
-
+		_concert = concert;
 		_seats = new HashSet<Seat>();
 		_seats.addAll(seats);
 
 		_priceBand = priceBand;
+	}
+	
+	public Long getId() {
+		return _bid;
+	}
+	
+	public Concert getConcert() {
+		return _concert;
 	}
 
 	public LocalDateTime getDateTime() {

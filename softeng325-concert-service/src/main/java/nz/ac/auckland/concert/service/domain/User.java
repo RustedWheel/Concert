@@ -10,6 +10,7 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
@@ -54,11 +55,12 @@ public class User {
 	@JoinColumn(name="USER_TOKEN",unique=true )
 	private Token _cookieToken;
 	
-	@ElementCollection
+	@ElementCollection(fetch=FetchType.EAGER)
 	@CollectionTable( name = "USER_CREDITCARDS")
 	private Set<CreditCard> _creditcard;
 	
-	@OneToMany
+	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER )
+	@JoinTable(name="USER_RESERVATION", joinColumns= @JoinColumn(name = "USERNAME"),inverseJoinColumns= @JoinColumn(name = "RESERVATION_RID"))
 	private Set<Reservation> _reservations;
 	
 	protected User() {}
@@ -113,6 +115,22 @@ public class User {
 	
 	public void addCreditcard(CreditCard creditcard) {
 		_creditcard.add(creditcard);
+	}
+	
+	public Set<Reservation> getReservations() {
+		return _reservations;
+	}
+	
+	public void setReservation(Set<Reservation> reservations) {
+		_reservations = reservations;
+	}
+	
+	public void addReservation(Reservation reservation) {
+		_reservations.add(reservation);
+	}
+	
+	public void removeReservation(Reservation reservation) {
+		_reservations.remove(reservation);
 	}
 	
 	@Override
