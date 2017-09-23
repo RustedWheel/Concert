@@ -320,9 +320,26 @@ public class ConcertResource {
 
 			Concert concert = em.find(Concert.class, dtoReservationRequest.getConcertId());
 
-			TypedQuery<Booking> bookingQuery = em.createQuery("select c from " + Booking.class.getName() +  " c where CONCERT_CID = (:concertID)", Booking.class);
+/*			TypedQuery<Booking> bookingQuery = em.createQuery("select c from " + Booking.class.getName() +  
+					" c where CONCERT_CID = (:concertID) and DATE = (:date) and PRICEBAND = (:priceband)", Booking.class);
 			bookingQuery.setParameter("concertID", dtoReservationRequest.getConcertId());
+			bookingQuery.setParameter("date", dtoReservationRequest.getDate());
+			bookingQuery.setParameter("priceband", dtoReservationRequest.getSeatType().toString());
+			List<Booking> bookings = bookingQuery.getResultList();*/
+			
+			TypedQuery<Booking> bookingQuery = em.createQuery("select c from " + Booking.class.getName() +  
+					" c where CONCERT_CID = (:concertID) and DATE = (:date) and PRICEBAND = (:priceband)", Booking.class);
+			bookingQuery.setParameter("concertID", dtoReservationRequest.getConcertId());
+			bookingQuery.setParameter("date", dtoReservationRequest.getDate());
+			bookingQuery.setParameter("priceband", dtoReservationRequest.getSeatType().toString());
 			List<Booking> bookings = bookingQuery.getResultList();
+			
+			/*TypedQuery<Seat> seatQuery = em.createQuery("select c from " + Booking.class.getName() +  
+					" c where CONCERT_CID = (:concertID) and DATE = (:date) and PRICEBAND = (:priceband)", Booking.class);
+			seatQuery.setParameter("concertID", dtoReservationRequest.getConcertId());
+			seatQuery.setParameter("date", dtoReservationRequest.getDate());
+			seatQuery.setParameter("priceband", dtoReservationRequest.getSeatType().toString());
+			List<Seat> bookedSeats = seatQuery.getResultList();*/
 
 			User user = storedToken.getUser();
 
@@ -372,16 +389,16 @@ public class ConcertResource {
 					break;
 				}
 			}
-
-			Reservation reservation = new Reservation(dtoReservationRequest.getSeatType(), concert, dtoReservationRequest.getDate() , reservedSeats);
-
+			
 			Booking newBooking = new Booking(concert, dtoReservationRequest.getDate(),reservedSeats ,dtoReservationRequest.getSeatType());
 
 			em.getTransaction().begin();
-
-			em.persist(reservation);
-
+			
 			em.persist(newBooking);
+
+			Reservation reservation = new Reservation(dtoReservationRequest.getSeatType(), concert, dtoReservationRequest.getDate() , reservedSeats, newBooking.getId());
+			
+			em.persist(reservation);
 
 			user.addReservation(reservation);
 
@@ -434,7 +451,7 @@ public class ConcertResource {
 	 * Messages.SERVICE_COMMUNICATION_ERROR
 	 * 
 	 */
-	
+
 	@POST
 	@Path("reservation/confirm")
 	@Consumes(javax.ws.rs.core.MediaType.APPLICATION_XML)
@@ -458,26 +475,34 @@ public class ConcertResource {
 			Set<CreditCard> card = storedToken.getUser().getCreditcard();
 
 			em.getTransaction().commit();
-			
-			if(card == null){
-				_logger.debug(Messages.CREDIT_CARD_NOT_REGISTERED);
-				throw new BadRequestException(Response
-						.status (Status.BAD_REQUEST)
-						.entity (Messages.CREDIT_CARD_NOT_REGISTERED)
-						.build());
-			} else if(card.size() <= 0) {
-				_logger.debug(Messages.CREDIT_CARD_NOT_REGISTERED);
-				throw new BadRequestException(Response
-						.status (Status.BAD_REQUEST)
-						.entity (Messages.CREDIT_CARD_NOT_REGISTERED)
-						.build());
-			}
 
 			if(storedReservation == null){
 				_logger.debug(Messages.EXPIRED_RESERVATION);
 				throw new NotFoundException(Response
 						.status (Status.NOT_FOUND)
 						.entity (Messages.EXPIRED_RESERVATION)
+						.build());
+			}
+
+			if(card.size() <= 0){
+				_logger.debug(Messages.CREDIT_CARD_NOT_REGISTERED);
+
+				/*TypedQuery<Booking> bookingQuery = em.createQuery("select b from " + Booking.class.getName() +  
+						" b left join fetch Reservation", Booking.class);*/
+				
+/*				where CONCERT_CID = (:concertID) and DATE = (:date) and PRICEBAND = (:priceband)
+				bookingQuery.setParameter("concertID", storedReservation.getConcert().getId());
+				bookingQuery.setParameter("date", storedReservation.getDate());
+				bookingQuery.setParameter("priceband", storedReservation.getSeatType().toString());*/
+				/*bookingQuery.setParameter("seat", storedReservation.getSeats());*/
+				
+				Long bookingId = storedReservation.getBookingId();
+				
+				deleteReservation(storedReservation.getId(), bookingId,storedToken.getUser().getUsername());
+				
+				throw new BadRequestException(Response
+						.status (Status.BAD_REQUEST)
+						.entity (Messages.CREDIT_CARD_NOT_REGISTERED)
 						.build());
 			}
 
@@ -522,7 +547,7 @@ public class ConcertResource {
 			Set<Reservation> reservations = user.getReservations();
 
 			em.getTransaction().commit();
-			
+
 			Set<BookingDTO> dtoBookings = new HashSet<BookingDTO>();
 
 			for(Reservation reservation : reservations){
@@ -537,7 +562,7 @@ public class ConcertResource {
 				dtoBookings.add(BookingDTO);
 
 			}
-			
+
 			GenericEntity<Set<BookingDTO>> entity = new GenericEntity<Set<BookingDTO>>(dtoBookings) {};
 
 			response = Response.ok().entity(entity);
@@ -630,63 +655,6 @@ public class ConcertResource {
 
 	private void deleteReservationUponExpiry(Long reservationID, Long bookingID, String username){
 
-		/*Thread thread = new Thread(){
-		    public void run(){
-		    	
-				  try {
-						Thread.sleep(ConcertApplication.RESERVATION_EXPIRY_TIME_IN_SECONDS * 1000);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-		    	
-		    	System.out.println("Checking wether reservation is confirmed!");
-
-				EntityManager em = null;
-				try {
-					em = PersistenceManager.instance().createEntityManager();
-
-					em.getTransaction().begin();
-					
-					Booking booking = em.find(Booking.class, bookingID);
-
-					Reservation storedReservation = em.find(Reservation.class, reservationID);
-
-					em.getTransaction().commit();
-					
-					if(!storedReservation.getStatus()){
-
-						em.getTransaction().begin();
-
-						em.remove(storedReservation);
-
-						em.remove(booking);
-
-						User user = em.find(User.class, username);
-
-						user.removeReservation(storedReservation);
-
-						em.persist(user);
-
-						System.out.println("Reservation expired! Id = " + reservationID);
-
-						em.getTransaction().commit();
-
-					}
-
-				} finally {
-					if (em != null && em.isOpen()) {
-						em.close ();
-					}
-				}
-		      
-		      
-		      
-		    }
-		  };
-
-		  thread.start();*/
-		
 		Timer timer = new Timer();
 		timer.schedule(new TimerTask() {
 
@@ -695,46 +663,55 @@ public class ConcertResource {
 
 				System.out.println("Checking wether reservation is confirmed!");
 
-				EntityManager em = null;
-				try {
-					em = PersistenceManager.instance().createEntityManager();
-
-					em.getTransaction().begin();
-					
-					Booking booking = em.find(Booking.class, bookingID);
-
-					Reservation storedReservation = em.find(Reservation.class, reservationID);
-
-					em.getTransaction().commit();
-					
-					if(!storedReservation.getStatus()){
-
-						em.getTransaction().begin();
-
-						em.remove(storedReservation);
-
-						em.remove(booking);
-
-						User user = em.find(User.class, username);
-
-						user.removeReservation(storedReservation);
-
-						em.persist(user);
-
-						System.out.println("Reservation expired! Id = " + reservationID);
-
-						em.getTransaction().commit();
-
-					}
-
-				} finally {
-					if (em != null && em.isOpen()) {
-						em.close ();
-					}
-				}
+				deleteReservation(reservationID, bookingID, username);
 
 			}
 		}, ConcertApplication.RESERVATION_EXPIRY_TIME_IN_SECONDS * 1000);
+
+	}
+
+
+	private void deleteReservation(Long reservationID, Long bookingID, String username){
+
+		EntityManager em = null;
+		try {
+			em = PersistenceManager.instance().createEntityManager();
+
+			em.getTransaction().begin();
+
+			Booking booking = em.find(Booking.class, bookingID);
+
+			Reservation storedReservation = em.find(Reservation.class, reservationID);
+
+			em.getTransaction().commit();
+
+			if(storedReservation != null){
+				if(!storedReservation.getStatus()){
+
+					em.getTransaction().begin();
+
+					em.remove(storedReservation);
+
+					em.remove(booking);
+
+					User user = em.find(User.class, username);
+
+					user.removeReservation(storedReservation);
+
+					em.persist(user);
+
+					System.out.println("Deleted reservation with Id = " + reservationID);
+
+					em.getTransaction().commit();
+
+				}
+			}
+
+		} finally {
+			if (em != null && em.isOpen()) {
+				em.close ();
+			}
+		}
 
 	}
 

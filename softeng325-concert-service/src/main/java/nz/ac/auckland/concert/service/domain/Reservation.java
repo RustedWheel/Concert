@@ -60,16 +60,20 @@ public class Reservation {
 	@Column( name = "SEAT" )
 	private Set<Seat> _seats;
 	
+	@Column(nullable = false, name = "BOOKING_ID" )
+	private Long _bookingId;
+	
 	@Column(nullable = false, name = "Confirmed" )
 	private boolean _confirmed;
 	
 	public Reservation() {}
 	
-	public Reservation(PriceBand seatType, Concert concert, LocalDateTime date , Set<Seat> seats) {
+	public Reservation(PriceBand seatType, Concert concert, LocalDateTime date , Set<Seat> seats, Long bookingId) {
 		_seatType = seatType;
 		_concert = concert;
 		_date = date;
 		_seats = new HashSet<Seat>(seats);
+		_bookingId = bookingId;
 		_confirmed = false;
 	}
 	
@@ -91,6 +95,10 @@ public class Reservation {
 	
 	public Set<Seat> getSeats() {
 		return Collections.unmodifiableSet(_seats);
+	}
+	
+	public Long getBookingId() {
+		return _bookingId;
 	}
 	
 	public boolean getStatus() {

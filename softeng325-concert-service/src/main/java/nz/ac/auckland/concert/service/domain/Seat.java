@@ -4,6 +4,8 @@ import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Embeddable;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 
@@ -27,7 +29,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 @Embeddable
 public class Seat {
 
-	
+	@Enumerated(EnumType.STRING)
 	@Column( nullable= false, name = "ROW" )
 	private SeatRow _row;
 	
