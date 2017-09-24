@@ -6,7 +6,6 @@ import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 
 import nz.ac.auckland.concert.service.domain.Booking;
-import nz.ac.auckland.concert.service.domain.Performer;
 import nz.ac.auckland.concert.service.domain.Reservation;
 import nz.ac.auckland.concert.service.domain.Token;
 import nz.ac.auckland.concert.service.domain.User;
@@ -75,7 +74,7 @@ public class ConcertApplication extends Application {
 			em.getTransaction (). commit();
 
 		} catch(Exception e) {
-			// Process and log the exception .
+			
 		} finally {
 			if (em != null && em.isOpen()) {
 				em.close ();
@@ -83,6 +82,7 @@ public class ConcertApplication extends Application {
 		}
 
 		_classes.add(ConcertResource.class);
+		_classes.add(NewsItemResource.class);
 	}
 
 	@Override

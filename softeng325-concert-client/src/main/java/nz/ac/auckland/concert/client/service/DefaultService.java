@@ -19,6 +19,8 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation.Builder;
+import javax.ws.rs.client.InvocationCallback;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
@@ -203,10 +205,8 @@ public class DefaultService implements ConcertService {
 		} catch (AmazonClientException e) {
 			throw new ServiceException(Messages.SERVICE_COMMUNICATION_ERROR);
 		} catch (InterruptedException e) {
-			e.printStackTrace();
-			System.exit(1);
+			throw new ServiceException(Messages.SERVICE_COMMUNICATION_ERROR);
 		}
-
 
 		mgr.shutdownNow();
 
@@ -217,7 +217,7 @@ public class DefaultService implements ConcertService {
 		} catch (IOException e) {
 			throw new ServiceException(Messages.NO_IMAGE_FOR_PERFORMER);
 		}
-		
+
 		return image;
 	}
 
@@ -317,13 +317,35 @@ public class DefaultService implements ConcertService {
 
 	@Override
 	public void subscribeForNewsItems(NewsItemListener listener) {
-		throw new UnsupportedOperationException();
+
+		Client client= ClientBuilder.newClient();
+
+		final WebTarget target =client.target("newsItem/subscribe");
+		target.request( )
+		.async( )
+		.get( new InvocationCallback<NewsItemDTO>() {
+			public void completed( NewsItemDTO dtoNewsItem ) {
+				target.request().async().get(this);
+			}
+
+			public void failed( Throwable t ) {}
+		});
+		
+		client.close();
 
 	}
 
 	@Override
 	public void cancelSubscription() {
-		throw new UnsupportedOperationException();
+
+		Client client= ClientBuilder.newClient();
+
+		final WebTarget target =client.target("newsItem/unsubscribe");
+		target.request( )
+		.async( );
+		
+		client.close();
+
 	}
 
 	private void addCookieToInvocation(Builder builder) {
@@ -340,15 +362,5 @@ public class DefaultService implements ConcertService {
 			_cookieValues = cookieValue;
 		}
 	}
-	
-	private class Listener implements NewsItemListener {
 
-		@Override
-		public void newsItemReceived(NewsItemDTO newsItem) {
-			
-			
-		}
-		
-	}
-	
 }

@@ -62,9 +62,6 @@ public class ConcertResource {
 
 	private static Logger _logger = LoggerFactory
 			.getLogger(ConcertResource.class);
-	
-	protected List<AsyncResponse> _responses = new
-			ArrayList<AsyncResponse>( );
 
 	@GET
 	@Produces(javax.ws.rs.core.MediaType.APPLICATION_XML)
@@ -225,7 +222,7 @@ public class ConcertResource {
 
 			em.getTransaction().begin();
 
-			User searchUser = em.find(User.class, dtoUser.getUsername(), LockModeType.PESSIMISTIC_READ);
+			User searchUser = em.find(User.class, dtoUser.getUsername(), LockModeType.PESSIMISTIC_WRITE);
 
 			em.getTransaction().commit();
 
@@ -474,7 +471,7 @@ public class ConcertResource {
 
 			em.getTransaction().begin();
 
-			Reservation storedReservation = em.find(Reservation.class, reservation.getId()/*, LockModeType.PESSIMISTIC_WRITE*/);
+			Reservation storedReservation = em.find(Reservation.class, reservation.getId());
 
 			Set<CreditCard> card = storedToken.getUser().getCreditcard();
 
@@ -542,21 +539,18 @@ public class ConcertResource {
 			Set<Reservation> reservations = user.getReservations();
 
 			Set<BookingDTO> dtoBookings = new HashSet<BookingDTO>();
+
+			
+			
+			for(Reservation reservation : reservations){
+				
+				Booking booking = em.find(Booking.class, reservation.getBookingId(), LockModeType.PESSIMISTIC_READ);
+
+				dtoBookings.add(BookingMapper.toDto(booking));
+			
+			}
 			
 			em.getTransaction().commit();
-
-			for(Reservation reservation : reservations){
-
-				Set<SeatDTO> dtoSeats = new HashSet<SeatDTO>();
-
-				for(Seat seat : reservation.getSeats()){
-					dtoSeats.add(SeatMapper.toDto(seat));
-				}
-
-				BookingDTO BookingDTO = new BookingDTO(reservation.getConcert().getId(), reservation.getConcert().getTitle(), reservation.getDate(), dtoSeats, reservation.getSeatType());
-				dtoBookings.add(BookingDTO);
-
-			}
 
 			GenericEntity<Set<BookingDTO>> entity = new GenericEntity<Set<BookingDTO>>(dtoBookings) {};
 
@@ -569,20 +563,6 @@ public class ConcertResource {
 		}
 
 		return response.build();
-	}
-
-	
-	@GET
-	@Path("news/subscribe")
-	public void subscribe(
-	@Suspended AsyncResponse response ) {
-		_responses.add( response );
-	}
-	
-	@GET
-	@Path("news/unsubscribe")
-	public void unsubscribe() {
-		_responses.clear();
 	}
 
 	/**
@@ -692,6 +672,10 @@ public class ConcertResource {
 
 			Reservation storedReservation = em.find(Reservation.class, reservationID, LockModeType.PESSIMISTIC_WRITE);
 
+			if(storedReservation == null){
+				System.out.println("Reservation already deleted!");
+			}
+			
 			if(storedReservation != null){
 				if(!storedReservation.getStatus()){
 
