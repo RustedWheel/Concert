@@ -320,11 +320,13 @@ public class DefaultService implements ConcertService {
 
 		Client client= ClientBuilder.newClient();
 
-		final WebTarget target =client.target("newsItem/subscribe");
+		final WebTarget target =client.target("newsItem");
 		target.request( )
 		.async( )
-		.get( new InvocationCallback<NewsItemDTO>() {
-			public void completed( NewsItemDTO dtoNewsItem ) {
+		.get( new InvocationCallback<Response>() {
+			public void completed( Response response ) {
+				NewsItemDTO newsItem = response.readEntity(NewsItemDTO.class);
+				listener.newsItemReceived(newsItem);
 				target.request().async().get(this);
 			}
 
@@ -332,9 +334,9 @@ public class DefaultService implements ConcertService {
 		});
 		
 		client.close();
-
 	}
 
+	
 	@Override
 	public void cancelSubscription() {
 

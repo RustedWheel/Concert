@@ -1,7 +1,6 @@
 package nz.ac.auckland.concert.service.services;
 
 import java.net.URI;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -9,7 +8,6 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
@@ -23,8 +21,6 @@ import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.NewCookie;
@@ -37,10 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import nz.ac.auckland.concert.common.dto.BookingDTO;
 import nz.ac.auckland.concert.common.dto.ReservationDTO;
-import nz.ac.auckland.concert.common.dto.SeatDTO;
-import nz.ac.auckland.concert.common.dto.UserDTO;
 import nz.ac.auckland.concert.common.message.Messages;
-import nz.ac.auckland.concert.common.types.PriceBand;
 import nz.ac.auckland.concert.common.types.SeatNumber;
 import nz.ac.auckland.concert.common.types.SeatRow;
 import nz.ac.auckland.concert.common.util.TheatreLayout;
@@ -327,13 +320,6 @@ public class ConcertResource {
 			em.getTransaction().begin();
 
 			Concert concert = em.find(Concert.class, dtoReservationRequest.getConcertId(), LockModeType.PESSIMISTIC_READ);
-
-/*			TypedQuery<Booking> bookingQuery = em.createQuery("select c from " + Booking.class.getName() +  
-					" c where CONCERT_CID = (:concertID) and DATE = (:date) and PRICEBAND = (:priceband)", Booking.class);
-			bookingQuery.setParameter("concertID", dtoReservationRequest.getConcertId());
-			bookingQuery.setParameter("date", dtoReservationRequest.getDate());
-			bookingQuery.setParameter("priceband", dtoReservationRequest.getSeatType().toString());
-			List<Booking> bookings = bookingQuery.getResultList();*/
 			
 			TypedQuery<Booking> bookingQuery = em.createQuery("select c from " + Booking.class.getName() +  
 					" c where CONCERT_CID = (:concertID) and DATE = (:date) and PRICEBAND = (:priceband)", Booking.class);
@@ -475,8 +461,6 @@ public class ConcertResource {
 
 			Set<CreditCard> card = storedToken.getUser().getCreditcard();
 
-/*			em.getTransaction().commit();*/
-
 			if(storedReservation == null){
 				_logger.debug(Messages.EXPIRED_RESERVATION);
 				throw new NotFoundException(Response
@@ -499,8 +483,6 @@ public class ConcertResource {
 			}
 
 			storedReservation.setStatus(true);
-
-			/*em.getTransaction().begin();*/
 
 			em.merge(storedReservation);
 
