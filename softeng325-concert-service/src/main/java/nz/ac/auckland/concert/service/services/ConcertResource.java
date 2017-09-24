@@ -12,6 +12,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
@@ -22,6 +23,8 @@ import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.NewCookie;
@@ -59,6 +62,9 @@ public class ConcertResource {
 
 	private static Logger _logger = LoggerFactory
 			.getLogger(ConcertResource.class);
+	
+	protected List<AsyncResponse> _responses = new
+			ArrayList<AsyncResponse>( );
 
 	@GET
 	@Produces(javax.ws.rs.core.MediaType.APPLICATION_XML)
@@ -70,16 +76,18 @@ public class ConcertResource {
 			em = PersistenceManager.instance().createEntityManager();
 			em.getTransaction().begin();
 
-			TypedQuery<Concert> concertQuery = em.createQuery("select c from " + Concert.class.getName() +  " c", Concert.class);
+			TypedQuery<Concert> concertQuery = em.createQuery("select c from " + Concert.class.getName() +  " c", Concert.class)
+					.setLockMode( LockModeType.PESSIMISTIC_READ )
+					.setHint( "javax.persistence.lock.timeout", 5000 );
 			List<Concert> concerts = concertQuery.getResultList();
-
-			em.getTransaction().commit();
 
 			List<nz.ac.auckland.concert.common.dto.ConcertDTO> concertDTOs = new ArrayList<nz.ac.auckland.concert.common.dto.ConcertDTO>();
 
 			for(Concert concert :concerts){
 				concertDTOs.add(ConcertMapper.toDto(concert));
 			}
+			
+			em.getTransaction().commit();
 
 			GenericEntity<List<nz.ac.auckland.concert.common.dto.ConcertDTO>> entity = new GenericEntity<List<nz.ac.auckland.concert.common.dto.ConcertDTO>>(concertDTOs) {};
 			response = Response.ok(entity);
@@ -106,15 +114,18 @@ public class ConcertResource {
 
 			em.getTransaction().begin();
 
-			TypedQuery<Performer> performerQuery = em.createQuery("select p from " + Performer.class.getName() +  " p", Performer.class);
+			TypedQuery<Performer> performerQuery = em.createQuery("select p from " + Performer.class.getName() +  " p", Performer.class)
+					.setLockMode( LockModeType.PESSIMISTIC_READ )
+					.setHint( "javax.persistence.lock.timeout", 5000 );
 			List<Performer> performers = performerQuery.getResultList();
-			em.getTransaction().commit();
-
+			
 			List<nz.ac.auckland.concert.common.dto.PerformerDTO> performerDTOs = new ArrayList<nz.ac.auckland.concert.common.dto.PerformerDTO>();
 
 			for(Performer performer :performers){
 				performerDTOs.add(PerformerMapper.toDto(performer));
 			}
+			
+			em.getTransaction().commit();
 
 			GenericEntity<List<nz.ac.auckland.concert.common.dto.PerformerDTO>> entity = new GenericEntity<List<nz.ac.auckland.concert.common.dto.PerformerDTO>>(performerDTOs){};
 			response = Response.ok(entity);
@@ -150,7 +161,7 @@ public class ConcertResource {
 
 			em.getTransaction().begin();
 
-			User searchUser = em.find(User.class, dtoUser.getUsername());
+			User searchUser = em.find(User.class, dtoUser.getUsername(), LockModeType.PESSIMISTIC_READ);
 
 			em.getTransaction().commit();
 
@@ -214,7 +225,7 @@ public class ConcertResource {
 
 			em.getTransaction().begin();
 
-			User searchUser = em.find(User.class, dtoUser.getUsername());
+			User searchUser = em.find(User.class, dtoUser.getUsername(), LockModeType.PESSIMISTIC_READ);
 
 			em.getTransaction().commit();
 
@@ -318,7 +329,7 @@ public class ConcertResource {
 
 			em.getTransaction().begin();
 
-			Concert concert = em.find(Concert.class, dtoReservationRequest.getConcertId());
+			Concert concert = em.find(Concert.class, dtoReservationRequest.getConcertId(), LockModeType.PESSIMISTIC_READ);
 
 /*			TypedQuery<Booking> bookingQuery = em.createQuery("select c from " + Booking.class.getName() +  
 					" c where CONCERT_CID = (:concertID) and DATE = (:date) and PRICEBAND = (:priceband)", Booking.class);
@@ -332,14 +343,8 @@ public class ConcertResource {
 			bookingQuery.setParameter("concertID", dtoReservationRequest.getConcertId());
 			bookingQuery.setParameter("date", dtoReservationRequest.getDate());
 			bookingQuery.setParameter("priceband", dtoReservationRequest.getSeatType().toString());
+			bookingQuery.setLockMode( LockModeType.PESSIMISTIC_READ ).setHint( "javax.persistence.lock.timeout", 5000 );
 			List<Booking> bookings = bookingQuery.getResultList();
-			
-			/*TypedQuery<Seat> seatQuery = em.createQuery("select c from " + Booking.class.getName() +  
-					" c where CONCERT_CID = (:concertID) and DATE = (:date) and PRICEBAND = (:priceband)", Booking.class);
-			seatQuery.setParameter("concertID", dtoReservationRequest.getConcertId());
-			seatQuery.setParameter("date", dtoReservationRequest.getDate());
-			seatQuery.setParameter("priceband", dtoReservationRequest.getSeatType().toString());
-			List<Seat> bookedSeats = seatQuery.getResultList();*/
 
 			User user = storedToken.getUser();
 
@@ -351,7 +356,6 @@ public class ConcertResource {
 						.entity (Messages.CONCERT_NOT_SCHEDULED_ON_RESERVATION_DATE)
 						.build());
 			}
-
 
 			for(Booking booking : bookings){
 				for(Seat bookedSeat : booking.getSeats()){
@@ -470,11 +474,11 @@ public class ConcertResource {
 
 			em.getTransaction().begin();
 
-			Reservation storedReservation = em.find(Reservation.class, reservation.getId());
+			Reservation storedReservation = em.find(Reservation.class, reservation.getId()/*, LockModeType.PESSIMISTIC_WRITE*/);
 
 			Set<CreditCard> card = storedToken.getUser().getCreditcard();
 
-			em.getTransaction().commit();
+/*			em.getTransaction().commit();*/
 
 			if(storedReservation == null){
 				_logger.debug(Messages.EXPIRED_RESERVATION);
@@ -486,15 +490,6 @@ public class ConcertResource {
 
 			if(card.size() <= 0){
 				_logger.debug(Messages.CREDIT_CARD_NOT_REGISTERED);
-
-				/*TypedQuery<Booking> bookingQuery = em.createQuery("select b from " + Booking.class.getName() +  
-						" b left join fetch Reservation", Booking.class);*/
-				
-/*				where CONCERT_CID = (:concertID) and DATE = (:date) and PRICEBAND = (:priceband)
-				bookingQuery.setParameter("concertID", storedReservation.getConcert().getId());
-				bookingQuery.setParameter("date", storedReservation.getDate());
-				bookingQuery.setParameter("priceband", storedReservation.getSeatType().toString());*/
-				/*bookingQuery.setParameter("seat", storedReservation.getSeats());*/
 				
 				Long bookingId = storedReservation.getBookingId();
 				
@@ -508,7 +503,7 @@ public class ConcertResource {
 
 			storedReservation.setStatus(true);
 
-			em.getTransaction().begin();
+			/*em.getTransaction().begin();*/
 
 			em.merge(storedReservation);
 
@@ -546,9 +541,9 @@ public class ConcertResource {
 
 			Set<Reservation> reservations = user.getReservations();
 
-			em.getTransaction().commit();
-
 			Set<BookingDTO> dtoBookings = new HashSet<BookingDTO>();
+			
+			em.getTransaction().commit();
 
 			for(Reservation reservation : reservations){
 
@@ -576,7 +571,19 @@ public class ConcertResource {
 		return response.build();
 	}
 
-
+	
+	@GET
+	@Path("news/subscribe")
+	public void subscribe(
+	@Suspended AsyncResponse response ) {
+		_responses.add( response );
+	}
+	
+	@GET
+	@Path("news/unsubscribe")
+	public void unsubscribe() {
+		_responses.clear();
+	}
 
 	/**
 	 * Helper method that can be called from every service method to generate a 
@@ -631,9 +638,7 @@ public class ConcertResource {
 
 			em.getTransaction().begin();
 
-			storedToken = em.find(Token.class, cookieToken.getValue());
-
-			em.getTransaction().commit();
+			storedToken = em.find(Token.class, cookieToken.getValue(), LockModeType.PESSIMISTIC_READ);
 
 			if(!cookieToken.getName().equals(Config.CLIENT_COOKIE) || storedToken == null){
 
@@ -642,6 +647,8 @@ public class ConcertResource {
 						.entity (Messages.BAD_AUTHENTICATON_TOKEN)
 						.build());
 			}
+			
+			em.getTransaction().commit();
 
 		} finally {
 			if (em != null && em.isOpen()) {
@@ -652,6 +659,7 @@ public class ConcertResource {
 		return storedToken;
 	}
 
+	
 
 	private void deleteReservationUponExpiry(Long reservationID, Long bookingID, String username){
 
@@ -661,7 +669,7 @@ public class ConcertResource {
 			@Override
 			public void run() {
 
-				System.out.println("Checking wether reservation is confirmed!");
+				System.out.println("Checking whether reservation is confirmed!");
 
 				deleteReservation(reservationID, bookingID, username);
 
@@ -669,6 +677,7 @@ public class ConcertResource {
 		}, ConcertApplication.RESERVATION_EXPIRY_TIME_IN_SECONDS * 1000);
 
 	}
+	
 
 
 	private void deleteReservation(Long reservationID, Long bookingID, String username){
@@ -679,22 +688,18 @@ public class ConcertResource {
 
 			em.getTransaction().begin();
 
-			Booking booking = em.find(Booking.class, bookingID);
+			Booking booking = em.find(Booking.class, bookingID, LockModeType.PESSIMISTIC_WRITE);
 
-			Reservation storedReservation = em.find(Reservation.class, reservationID);
-
-			em.getTransaction().commit();
+			Reservation storedReservation = em.find(Reservation.class, reservationID, LockModeType.PESSIMISTIC_WRITE);
 
 			if(storedReservation != null){
 				if(!storedReservation.getStatus()){
-
-					em.getTransaction().begin();
 
 					em.remove(storedReservation);
 
 					em.remove(booking);
 
-					User user = em.find(User.class, username);
+					User user = em.find(User.class, username, LockModeType.PESSIMISTIC_WRITE);
 
 					user.removeReservation(storedReservation);
 
@@ -702,10 +707,10 @@ public class ConcertResource {
 
 					System.out.println("Deleted reservation with Id = " + reservationID);
 
-					em.getTransaction().commit();
-
 				}
 			}
+			
+			em.getTransaction().commit();
 
 		} finally {
 			if (em != null && em.isOpen()) {

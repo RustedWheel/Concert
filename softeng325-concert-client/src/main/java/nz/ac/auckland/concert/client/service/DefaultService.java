@@ -42,6 +42,7 @@ import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
 import nz.ac.auckland.concert.common.dto.BookingDTO;
 import nz.ac.auckland.concert.common.dto.ConcertDTO;
 import nz.ac.auckland.concert.common.dto.CreditCardDTO;
+import nz.ac.auckland.concert.common.dto.NewsItemDTO;
 import nz.ac.auckland.concert.common.dto.PerformerDTO;
 import nz.ac.auckland.concert.common.dto.ReservationDTO;
 import nz.ac.auckland.concert.common.dto.ReservationRequestDTO;
@@ -339,4 +340,15 @@ public class DefaultService implements ConcertService {
 			_cookieValues = cookieValue;
 		}
 	}
+	
+	private class Listener implements NewsItemListener {
+
+		@Override
+		public void newsItemReceived(NewsItemDTO newsItem) {
+			
+			
+		}
+		
+	}
+	
 }
