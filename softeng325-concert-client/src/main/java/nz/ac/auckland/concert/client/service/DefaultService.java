@@ -58,7 +58,7 @@ public class DefaultService implements ConcertService {
 	private static final String AWS_SECRET_ACCESS_KEY = "";
 
 	// Name of the S3 bucket that stores images.
-	private static final String AWS_BUCKET = "concert.aucklanduni.ac.nz";
+	private static final String AWS_BUCKET = "a-little-bit-bucket";
 
 	private static final String FILE_SEPARATOR = System
 			.getProperty("file.separator");
@@ -222,8 +222,8 @@ public class DefaultService implements ConcertService {
 		AmazonS3 s3 = AmazonS3ClientBuilder
 				.standard()
 				.withRegion(Regions.AP_SOUTHEAST_2)
-				.withCredentials(
-						new AWSStaticCredentialsProvider(awsCredentials))
+				/*.withCredentials(
+						new AWSStaticCredentialsProvider(awsCredentials))*/
 				.build();
 
 		TransferManager mgr = TransferManagerBuilder

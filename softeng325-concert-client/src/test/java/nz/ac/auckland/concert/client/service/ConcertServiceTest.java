@@ -4,8 +4,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.awt.Image;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
 import javax.ws.rs.client.Client;
@@ -112,6 +114,21 @@ public class ConcertServiceTest {
 		
 		Set<PerformerDTO> performers = _service.getPerformers();
 		assertEquals(numberOfPerformers, performers.size());
+	}
+	
+	@Test
+	public void testRetrievePerformerImages() {
+		final int numberOfPerformers = 20;
+		
+		Set<PerformerDTO> performers = _service.getPerformers();
+		Set<Image> performerImages = new HashSet<Image>();
+		
+		for(PerformerDTO performer : performers){
+			performerImages.add(_service.getImageForPerformer(performer));
+		}
+		
+		assertEquals(numberOfPerformers, performers.size());
+		assertEquals(numberOfPerformers, performerImages.size());
 	}
 	
 	@Test
