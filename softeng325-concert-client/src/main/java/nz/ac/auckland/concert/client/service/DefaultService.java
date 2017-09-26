@@ -224,17 +224,20 @@ public class DefaultService implements ConcertService {
 				.withS3Client(s3)
 				.build();
 
-		File f = new File(DOWNLOAD_DIRECTORY + FILE_SEPARATOR + name);				
-		try {
-			Download xfer = mgr.download(AWS_BUCKET, name, f);
-			xfer.waitForCompletion();
-		} catch (AmazonServiceException e) {
-			throw new ServiceException(Messages.NO_IMAGE_FOR_PERFORMER);
-		} catch (AmazonClientException e) {
-			throw new ServiceException(Messages.SERVICE_COMMUNICATION_ERROR);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-			System.exit(1);
+		File f = new File(DOWNLOAD_DIRECTORY + FILE_SEPARATOR + name);	
+		
+		if(!f.exists()){
+			try {
+				Download xfer = mgr.download(AWS_BUCKET, name, f);
+				xfer.waitForCompletion();
+			} catch (AmazonServiceException e) {
+				throw new ServiceException(Messages.NO_IMAGE_FOR_PERFORMER);
+			} catch (AmazonClientException e) {
+				throw new ServiceException(Messages.SERVICE_COMMUNICATION_ERROR);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
 		}
 
 		mgr.shutdownNow();
