@@ -441,7 +441,7 @@ public class ConcertServiceTest {
 		} 
 	}
 	
-	@Test
+/*	@Test
 	public void testSubscription() {
 		try {
 			UserDTO userDTO = new UserDTO("Bulldog", "123", "Churchill", "Winston");
@@ -474,5 +474,5 @@ public class ConcertServiceTest {
 			_logger.debug("Exception: " + e.getMessage());
 			fail();
 		}
-	}
+	}*/
 }

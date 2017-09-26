@@ -311,7 +311,7 @@ public class ConcertResource {
 
 			//Make the cookie token
 			response.cookie(makeCookie(searchUser.getToken().getTokenValue()));
-			System.out.print("Authentication token value:" + searchUser.getToken().getTokenValue());
+			_logger.debug("Authentication token value:" + searchUser.getToken().getTokenValue());
 
 			response.entity(UserMapper.toDto(searchUser));
 
@@ -787,8 +787,7 @@ public class ConcertResource {
 
 			@Override
 			public void run() {
-
-				System.out.println("Checking whether reservation is confirmed!");
+				_logger.debug("Checking whether reservation is confirmed!");
 
 				//Check the reservation record and delete if necessary
 				deleteReservation(reservationID, bookingID, username);
@@ -837,7 +836,7 @@ public class ConcertResource {
 
 					em.persist(user);
 
-					System.out.println("Deleted reservation with Id = " + reservationID);
+					_logger.debug("Deleted reservation with Id = " + reservationID);
 
 				}
 			}

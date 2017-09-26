@@ -1,11 +1,8 @@
 package nz.ac.auckland.concert.service.services;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import javax.persistence.EntityManager;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.CookieParam;
 import javax.ws.rs.DELETE;
@@ -16,13 +13,11 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.Response;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import nz.ac.auckland.concert.common.dto.NewsItemDTO;
-import nz.ac.auckland.concert.service.domain.NewsItem;
 
 
 @Path("/news")
@@ -40,8 +35,7 @@ public class NewsItemResource {
 	@Produces(javax.ws.rs.core.MediaType.APPLICATION_XML)
 	public void subscribe(@Suspended AsyncResponse response, @CookieParam("clientUsername") Cookie token) {
 
-		_logger.debug("Client subscribe request receieved, Id : " + token.getValue());
-		
+		_logger.debug("Client subscribe request received, Id : " + token.getValue());
 		_responses.put(token.getValue(), response );
 	}
 
@@ -63,8 +57,6 @@ public class NewsItemResource {
 	@DELETE
 	@Path("unsubscribe")
 	public void unsubscribe(@CookieParam("clientUsername") Cookie token) {
-		
-		/*_responses.get(token.getValue()).resume(new InterruptedException());*/
 		
 		_logger.debug("User unsuscribed!");
 		_responses.remove(token.getValue());

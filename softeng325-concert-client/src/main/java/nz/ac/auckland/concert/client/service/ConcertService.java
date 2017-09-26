@@ -285,6 +285,4 @@ public interface ConcertService {
 	interface NewsItemListener {
 		void newsItemReceived(NewsItemDTO newsItem);
 	}
-
-	void postNewsItem(NewsItemDTO newsItem);
 }

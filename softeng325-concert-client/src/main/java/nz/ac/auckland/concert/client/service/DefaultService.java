@@ -27,8 +27,6 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -55,10 +53,6 @@ public class DefaultService implements ConcertService {
 	private static String WEB_SERVICE_URI = "http://localhost:10000/services/concerts";
 	private static String NEWS_SERVICE_URI = "http://localhost:10000/services/news";
 
-	// AWS S3 access credentials for concert images.
-	private static final String AWS_ACCESS_KEY_ID = "";
-	private static final String AWS_SECRET_ACCESS_KEY = "";
-
 	// Name of the S3 bucket that stores images.
 	private static final String AWS_BUCKET = "a-little-bit-bucket";
 
@@ -69,7 +63,7 @@ public class DefaultService implements ConcertService {
 	private static final String DOWNLOAD_DIRECTORY = USER_DIRECTORY
 			+ FILE_SEPARATOR + "images";
 
-	private String _cookieValues;
+	private String _cookieValue;
 
 	@Override
 	public Set<ConcertDTO> getConcerts() throws ServiceException {
@@ -157,7 +151,6 @@ public class DefaultService implements ConcertService {
 			break;
 		case 500:
 			errorMessage = response.readEntity(String.class);
-			System.out.println(errorMessage);
 			throw new ServiceException(errorMessage);
 		}
 
@@ -192,7 +185,7 @@ public class DefaultService implements ConcertService {
 			errorMessage = response.readEntity (String.class);
 			throw new ServiceException(errorMessage);
 		case 200: 
-			System.out.println("Authentication success");
+			_logger.debug("Authentication success");
 			user = response.readEntity(UserDTO.class);
 			break;
 		case 500:
@@ -219,13 +212,9 @@ public class DefaultService implements ConcertService {
 
 		// Create an AmazonS3 object that represents a connection with the
 		// remote S3 service.
-		BasicAWSCredentials awsCredentials = new BasicAWSCredentials(
-				AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY);
 		AmazonS3 s3 = AmazonS3ClientBuilder
 				.standard()
 				.withRegion(Regions.AP_SOUTHEAST_2)
-				/*.withCredentials(
-						new AWSStaticCredentialsProvider(awsCredentials))*/
 				.build();
 
 		TransferManager mgr = TransferManagerBuilder
@@ -407,7 +396,7 @@ public class DefaultService implements ConcertService {
 
 		Client client= ClientBuilder.newClient();
 		
-		Cookie newCookie = new Cookie(Config.CLIENT_COOKIE, _cookieValues);
+		Cookie newCookie = makeSubscribeCookie();
 
 		try {
 			final WebTarget target =client.target(NEWS_SERVICE_URI + "/subscribe");
@@ -442,41 +431,47 @@ public class DefaultService implements ConcertService {
 
 		Client client= ClientBuilder.newClient();
 		
-		Builder builder = client.target(NEWS_SERVICE_URI + "/unsubscribe").request();
-		addCookieToInvocation(builder);
-		Response response = builder.delete();
-
-		/*final WebTarget target = client.target("newsItem/unsubscribe");
-		target.request( )
-		.cookie(new Cookie(Config.CLIENT_COOKIE, _cookieValues))
-		.delete();*/
+		try {
+			Builder builder = client.target(NEWS_SERVICE_URI + "/unsubscribe").request();
+			builder.cookie(makeSubscribeCookie());
+			builder.delete();
+		} catch (ServiceException e) {
+			throw new ServiceException(Messages.SERVICE_COMMUNICATION_ERROR);
+		} catch (ProcessingException e) {
+			throw new ServiceException(Messages.SERVICE_COMMUNICATION_ERROR);
+		} catch (Exception e) {
+			throw new UnsupportedOperationException();
+		}
+		
 		
 		client.close();
 
 	}
 	
 	
-	@Override
+	/*@Override*/
 	public void postNewsItem(NewsItemDTO newsItem) {
 
 		Client client= ClientBuilder.newClient();
 
-		Builder builder = client.target(NEWS_SERVICE_URI).request();
-		addCookieToInvocation(builder);
-		Response response = builder.post(Entity.xml(newsItem));
-		
-		/*final WebTarget target = client.target("newsItem");
-		target.request( )
-		.async()
-		.post(Entity.xml(newsItem));*/
+		try {
+			Builder builder = client.target(NEWS_SERVICE_URI).request();
+			addCookieToInvocation(builder);
+			builder.post(Entity.xml(newsItem));
+		} catch (ServiceException e) {
+			throw new ServiceException(Messages.SERVICE_COMMUNICATION_ERROR);
+		} catch (ProcessingException e) {
+			throw new ServiceException(Messages.SERVICE_COMMUNICATION_ERROR);
+		} catch (Exception e) {
+			throw new UnsupportedOperationException();
+		}
 		
 		client.close();
-
 	}
 
 	private void addCookieToInvocation(Builder builder) {
-		if(_cookieValues != null) {
-			builder.cookie(Config.CLIENT_COOKIE, _cookieValues);
+		if(_cookieValue != null) {
+			builder.cookie(Config.CLIENT_COOKIE, _cookieValue);
 		}
 	}
 
@@ -485,8 +480,28 @@ public class DefaultService implements ConcertService {
 
 		if(cookies.containsKey(Config.CLIENT_COOKIE)) {
 			String cookieValue = cookies.get(Config.CLIENT_COOKIE).getValue();
-			_cookieValues = cookieValue;
+			_cookieValue = cookieValue;
 		}
+	}
+	
+	/**
+	 * Make a news item subscriber cookie using the client cookie token value. If
+	 * the the user is not authenticated (the cookie value is null), use a hashed instance of
+	 * this class instead.
+	 * 
+	 * @return a Cookie that allows the client to be subscribed to news items
+	 * 
+	 */
+	private Cookie makeSubscribeCookie(){
+		Cookie newCookie;
+		if(_cookieValue != null){
+			newCookie = new Cookie(Config.CLIENT_COOKIE, _cookieValue);
+		} else {
+			int hash =  this.hashCode();
+			newCookie = new Cookie(Config.CLIENT_COOKIE, String.valueOf(hash));
+		}
+		
+		return newCookie;
 	}
 
 }
