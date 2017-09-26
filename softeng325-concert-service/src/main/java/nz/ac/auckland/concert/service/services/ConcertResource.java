@@ -521,8 +521,8 @@ public class ConcertResource {
 
 			response = Response.ok().entity(dtoReservation);
 
-			//Start a timer thread that checks if the reservation is confirmed by the user. If not then the 
-			//reservation is expired and deleted along with its corresponding booking.
+			//Start a timer thread that checks if the reservation is confirmed by the user by the time it should expire (after 5 seconds). 
+			//If not then the reservation is expired and deleted along with the corresponding booking.
 			deleteReservationUponExpiry(reservation.getId(), newBooking.getId(), user.getUsername());
 
 		} catch (ProcessingException e) {

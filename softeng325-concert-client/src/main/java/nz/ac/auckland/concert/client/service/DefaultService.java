@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.imageio.ImageIO;
+import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -64,6 +65,7 @@ public class DefaultService implements ConcertService {
 			+ FILE_SEPARATOR + "images";
 
 	private String _cookieValue;
+	private static Long _latestNewsItemId;
 
 	@Override
 	public Set<ConcertDTO> getConcerts() throws ServiceException {
@@ -396,7 +398,7 @@ public class DefaultService implements ConcertService {
 
 		Client client= ClientBuilder.newClient();
 		
-		Cookie newCookie = makeSubscribeCookie();
+		Cookie newCookie = makeSubscribeCookie(); //Make a new cookie
 
 		try {
 			final WebTarget target =client.target(NEWS_SERVICE_URI + "/subscribe");
@@ -404,20 +406,21 @@ public class DefaultService implements ConcertService {
 			.cookie(newCookie)
 			.async()
 			.get( new InvocationCallback<NewsItemDTO>() {
-				public void completed( NewsItemDTO newsItem ) {
+				public void completed( NewsItemDTO dtoNewsItem ) {
 					
-					listener.newsItemReceived(newsItem);
-					target.request().cookie(newCookie).async().get(this);
+					listener.newsItemReceived(dtoNewsItem);
+					_latestNewsItemId = dtoNewsItem.getId(); //Get the id for the news item that the client has received and assign it as the latest one
 					
+					//Re-subscribe. Since the id for the latest news item is updated, the cookie is also updated so that it tells the server
+					//of the latest news item that the client has received. 
+					target.request().cookie(makeSubscribeCookie()).async().get(this);
 				}
 
 				public void failed( Throwable t ) {
 				}
 			});
 			
-		} catch (ServiceException e) {
-			throw new ServiceException(Messages.SERVICE_COMMUNICATION_ERROR);
-		} catch (ProcessingException e) {
+		} catch (ServiceException | InternalServerErrorException | ProcessingException e) {
 			throw new ServiceException(Messages.SERVICE_COMMUNICATION_ERROR);
 		} catch (Exception e) {
 			throw new UnsupportedOperationException();
@@ -435,9 +438,7 @@ public class DefaultService implements ConcertService {
 			Builder builder = client.target(NEWS_SERVICE_URI + "/unsubscribe").request();
 			builder.cookie(makeSubscribeCookie());
 			builder.delete();
-		} catch (ServiceException e) {
-			throw new ServiceException(Messages.SERVICE_COMMUNICATION_ERROR);
-		} catch (ProcessingException e) {
+		} catch (ServiceException | InternalServerErrorException | ProcessingException e) {
 			throw new ServiceException(Messages.SERVICE_COMMUNICATION_ERROR);
 		} catch (Exception e) {
 			throw new UnsupportedOperationException();
@@ -448,7 +449,13 @@ public class DefaultService implements ConcertService {
 
 	}
 	
-	
+	/**
+	 * Helper method to test news item subscription. Posts a new news item
+	 * onto the server.
+	 * 
+	 * @param newsItem a description of the news item.
+	 * 
+	 */
 	/*@Override*/
 	public void postNewsItem(NewsItemDTO newsItem) {
 
@@ -458,9 +465,7 @@ public class DefaultService implements ConcertService {
 			Builder builder = client.target(NEWS_SERVICE_URI).request();
 			addCookieToInvocation(builder);
 			builder.post(Entity.xml(newsItem));
-		} catch (ServiceException e) {
-			throw new ServiceException(Messages.SERVICE_COMMUNICATION_ERROR);
-		} catch (ProcessingException e) {
+		} catch (ServiceException | InternalServerErrorException | ProcessingException e) {
 			throw new ServiceException(Messages.SERVICE_COMMUNICATION_ERROR);
 		} catch (Exception e) {
 			throw new UnsupportedOperationException();
@@ -485,20 +490,26 @@ public class DefaultService implements ConcertService {
 	}
 	
 	/**
-	 * Make a news item subscriber cookie using the client cookie token value. If
-	 * the the user is not authenticated (the cookie value is null), use a hashed instance of
-	 * this class instead.
+	 * Make a news item subscriber cookie using the latest received news item id and the 
+	 * client cookie token value. If the the user is not authenticated (the cookie value is null), 
+	 * use a hashed instance of this class instead.
 	 * 
 	 * @return a Cookie that allows the client to be subscribed to news items
 	 * 
 	 */
 	private Cookie makeSubscribeCookie(){
 		Cookie newCookie;
+		
+		if(_latestNewsItemId == null){
+			_latestNewsItemId = new Long (0); //If it is null it means the user has never subscribed before, thus setting the id value to 0;
+		}
+		
+		//Make the cookie
 		if(_cookieValue != null){
-			newCookie = new Cookie(Config.CLIENT_COOKIE, _cookieValue);
+			newCookie = new Cookie(Config.CLIENT_COOKIE, _latestNewsItemId + " " + _cookieValue);
 		} else {
 			int hash =  this.hashCode();
-			newCookie = new Cookie(Config.CLIENT_COOKIE, String.valueOf(hash));
+			newCookie = new Cookie(Config.CLIENT_COOKIE,  _latestNewsItemId + " " + String.valueOf(hash));
 		}
 		
 		return newCookie;

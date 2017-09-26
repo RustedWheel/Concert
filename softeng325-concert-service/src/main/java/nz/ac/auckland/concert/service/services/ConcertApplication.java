@@ -6,6 +6,7 @@ import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 
 import nz.ac.auckland.concert.service.domain.Booking;
+import nz.ac.auckland.concert.service.domain.NewsItem;
 import nz.ac.auckland.concert.service.domain.Reservation;
 import nz.ac.auckland.concert.service.domain.Token;
 import nz.ac.auckland.concert.service.domain.User;
@@ -67,6 +68,13 @@ public class ConcertApplication extends Application {
 			
 			for(Reservation reservation : reservations){
 				em.remove(reservation);
+			}
+			
+			TypedQuery<NewsItem> newsItemQuery = em.createQuery("select n from " + NewsItem.class.getName() +  " n", NewsItem.class);
+			List<NewsItem> newsItems = newsItemQuery.getResultList();
+			
+			for(NewsItem newsItem : newsItems){
+				em.remove(newsItem);
 			}
 			
 			em.flush();

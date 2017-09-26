@@ -1,6 +1,7 @@
 package nz.ac.auckland.concert.client.service;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -125,9 +126,7 @@ public class ConcertServiceTest {
 			Set<PerformerDTO> performers = _service.getPerformers();
 			PerformerDTO performer = performers.iterator().next();
 			Image img = _service.getImageForPerformer(performer);
-			if(img == null){
-				fail();
-			}
+			assertNotNull(img);
 			
 		}catch (ServiceException e) {
 			assertEquals(Messages.NO_IMAGE_FOR_PERFORMER, e.getMessage());
@@ -449,7 +448,46 @@ public class ConcertServiceTest {
 			
 			LocalDateTime dateTime = LocalDateTime.of(2017, 2, 24, 17, 00);
 			
-			NewsItemDTO news = new NewsItemDTO(new Long(1), dateTime, "Hi");
+			NewsItemDTO news1 = new NewsItemDTO(new Long(1), dateTime, "Hi");
+			NewsItemDTO news2 = new NewsItemDTO(new Long(2), dateTime, "me");
+			NewsItemDTO news3 = new NewsItemDTO(new Long(3), dateTime, "k");
+			NewsItemDTO news4 = new NewsItemDTO(new Long(4), dateTime, "hey");
+			NewsItemDTO news5 = new NewsItemDTO(new Long(5), dateTime, "lmao");
+			NewsItemDTO news6 = new NewsItemDTO(new Long(6), dateTime, "66666");
+			
+			_service.subscribeForNewsItems(new NewsItemListener(){
+
+				@Override
+				public void newsItemReceived(NewsItemDTO newsItem) {
+					try {
+						Thread.sleep(2000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					_logger.debug("News item recevied: " + newsItem.getId() + " " + newsItem.getTimetamp() + " " + newsItem.getContent());
+					
+				}
+				
+			});
+			
+			_service.postNewsItem(news1);
+			_service.postNewsItem(news2);
+			_service.postNewsItem(news3);
+			
+			Thread.sleep(5000);
+			
+			_service.postNewsItem(news4);
+			
+			Thread.sleep(3000);
+			
+			_service.cancelSubscription();
+			
+			_service.postNewsItem(news5);
+			
+			Thread.sleep(3000);
+			
+			_logger.debug("Subscribing again");
 			
 			_service.subscribeForNewsItems(new NewsItemListener(){
 
@@ -462,11 +500,134 @@ public class ConcertServiceTest {
 				
 			});
 			
-			_service.postNewsItem(news);
+			_service.postNewsItem(news6);
 			
 			Thread.sleep(3000);
 			
 			_service.cancelSubscription();
+			
+		} catch(ServiceException e) {
+			fail();
+		} catch (Exception e) {
+			_logger.debug("Exception: " + e.getMessage());
+			fail();
+		}
+	}
+	
+	@Test
+	public void testSubscription2() {
+		try {
+			UserDTO userDTO = new UserDTO("Bulldog", "123", "Churchill", "Winston");
+			_service.createUser(userDTO);
+			
+			LocalDateTime dateTime = LocalDateTime.of(2017, 2, 24, 17, 00);
+			
+			NewsItemDTO news1 = new NewsItemDTO(new Long(1), dateTime, "Hi");
+			NewsItemDTO news2 = new NewsItemDTO(new Long(2), dateTime, "me");
+			NewsItemDTO news3 = new NewsItemDTO(new Long(3), dateTime, "k");
+			NewsItemDTO news4 = new NewsItemDTO(new Long(4), dateTime, "hey");
+			NewsItemDTO news5 = new NewsItemDTO(new Long(5), dateTime, "lmao");
+			NewsItemDTO news6 = new NewsItemDTO(new Long(6), dateTime, "66666");
+			
+			_service.subscribeForNewsItems(new NewsItemListener(){
+
+				@Override
+				public void newsItemReceived(NewsItemDTO newsItem) {
+					try {
+						Thread.sleep(2000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					_logger.debug("News item recevied: " + newsItem.getId() + " " + newsItem.getTimetamp() + " " + newsItem.getContent());
+					
+				}
+				
+			});
+			
+			_service.postNewsItem(news1);
+			_service.postNewsItem(news2);
+			_service.postNewsItem(news3);
+			_service.postNewsItem(news4);
+			_service.postNewsItem(news5);
+			
+			Thread.sleep(15000);
+			
+			_service.cancelSubscription();
+			
+			Thread.sleep(3000);
+			
+			_logger.debug("Subscribing again");
+			
+			_service.subscribeForNewsItems(new NewsItemListener(){
+
+				@Override
+				public void newsItemReceived(NewsItemDTO newsItem) {
+					
+					_logger.debug("News item recevied: " + newsItem.getId() + " " + newsItem.getTimetamp() + " " + newsItem.getContent());
+					
+				}
+				
+			});
+			
+			_service.postNewsItem(news6);
+			
+			Thread.sleep(3000);
+			
+			_service.cancelSubscription();
+			
+		} catch(ServiceException e) {
+			fail();
+		} catch (Exception e) {
+			_logger.debug("Exception: " + e.getMessage());
+			fail();
+		}
+	}
+	
+	@Test
+	public void testSubscription3() {
+		try {
+			UserDTO userDTO = new UserDTO("Bulldog", "123", "Churchill", "Winston");
+			_service.createUser(userDTO);
+			
+			LocalDateTime dateTime = LocalDateTime.of(2017, 2, 24, 17, 00);
+			
+			NewsItemDTO news1 = new NewsItemDTO(new Long(1), dateTime, "Hi");
+			NewsItemDTO news2 = new NewsItemDTO(new Long(2), dateTime, "me");
+			NewsItemDTO news3 = new NewsItemDTO(new Long(3), dateTime, "k");
+			NewsItemDTO news4 = new NewsItemDTO(new Long(4), dateTime, "hey");
+			NewsItemDTO news5 = new NewsItemDTO(new Long(5), dateTime, "lmao");
+			NewsItemDTO news6 = new NewsItemDTO(new Long(6), dateTime, "66666");
+			NewsItemDTO news7 = new NewsItemDTO(new Long(7), dateTime, "77777");
+			
+			_service.subscribeForNewsItems(new NewsItemListener(){
+
+				@Override
+				public void newsItemReceived(NewsItemDTO newsItem) {
+					try {
+						Thread.sleep(5000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					_logger.debug("News item recevied: " + newsItem.getId() + " " + newsItem.getTimetamp() + " " + newsItem.getContent());
+					
+				}
+				
+			});
+			
+			_service.postNewsItem(news1);
+			_service.postNewsItem(news2);
+			_service.postNewsItem(news3);
+			_service.postNewsItem(news4);
+			_service.postNewsItem(news5);
+			_service.postNewsItem(news6);
+			_service.postNewsItem(news7);
+			
+			Thread.sleep(30000);
+			
+			_service.cancelSubscription();
+			
 			
 		} catch(ServiceException e) {
 			fail();
