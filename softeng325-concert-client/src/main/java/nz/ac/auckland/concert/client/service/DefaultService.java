@@ -17,6 +17,7 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation.Builder;
 import javax.ws.rs.client.InvocationCallback;
 import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
@@ -52,6 +53,7 @@ public class DefaultService implements ConcertService {
 			.getLogger(ConcertService.class);
 
 	private static String WEB_SERVICE_URI = "http://localhost:10000/services/concerts";
+	private static String NEWS_SERVICE_URI = "http://localhost:10000/services/news";
 
 	// AWS S3 access credentials for concert images.
 	private static final String AWS_ACCESS_KEY_ID = "";
@@ -399,25 +401,39 @@ public class DefaultService implements ConcertService {
 		return dtoBookings;
 	}
 
+	
 	@Override
 	public void subscribeForNewsItems(NewsItemListener listener) {
 
 		Client client= ClientBuilder.newClient();
-
-		final WebTarget target =client.target("newsItem");
-		target.request( )
-		.async( )
-		.get( new InvocationCallback<Response>() {
-			public void completed( Response response ) {
-				NewsItemDTO newsItem = response.readEntity(NewsItemDTO.class);
-				listener.newsItemReceived(newsItem);
-				target.request().async().get(this);
-			}
-
-			public void failed( Throwable t ) {}
-		});
 		
-		client.close();
+		Cookie newCookie = new Cookie(Config.CLIENT_COOKIE, _cookieValues);
+
+		try {
+			final WebTarget target =client.target(NEWS_SERVICE_URI + "/subscribe");
+			target.request( )
+			.cookie(newCookie)
+			.async()
+			.get( new InvocationCallback<NewsItemDTO>() {
+				public void completed( NewsItemDTO newsItem ) {
+					
+					listener.newsItemReceived(newsItem);
+					target.request().cookie(newCookie).async().get(this);
+					
+				}
+
+				public void failed( Throwable t ) {
+				}
+			});
+			
+		} catch (ServiceException e) {
+			throw new ServiceException(Messages.SERVICE_COMMUNICATION_ERROR);
+		} catch (ProcessingException e) {
+			throw new ServiceException(Messages.SERVICE_COMMUNICATION_ERROR);
+		} catch (Exception e) {
+			throw new UnsupportedOperationException();
+		}
+		
 	}
 
 	
@@ -425,10 +441,34 @@ public class DefaultService implements ConcertService {
 	public void cancelSubscription() {
 
 		Client client= ClientBuilder.newClient();
+		
+		Builder builder = client.target(NEWS_SERVICE_URI + "/unsubscribe").request();
+		addCookieToInvocation(builder);
+		Response response = builder.delete();
 
-		final WebTarget target =client.target("newsItem/unsubscribe");
+		/*final WebTarget target = client.target("newsItem/unsubscribe");
 		target.request( )
-		.async( );
+		.cookie(new Cookie(Config.CLIENT_COOKIE, _cookieValues))
+		.delete();*/
+		
+		client.close();
+
+	}
+	
+	
+	@Override
+	public void postNewsItem(NewsItemDTO newsItem) {
+
+		Client client= ClientBuilder.newClient();
+
+		Builder builder = client.target(NEWS_SERVICE_URI).request();
+		addCookieToInvocation(builder);
+		Response response = builder.post(Entity.xml(newsItem));
+		
+		/*final WebTarget target = client.target("newsItem");
+		target.request( )
+		.async()
+		.post(Entity.xml(newsItem));*/
 		
 		client.close();
 

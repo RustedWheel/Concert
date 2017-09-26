@@ -37,7 +37,6 @@ import nz.ac.auckland.concert.service.domain.jpa.LocalDateTimeConverter;
 public class NewsItem {
 	
 	@Id
-	@GeneratedValue
 	@Column( nullable = false, name = "ID" )
 	private Long _niid;
 	

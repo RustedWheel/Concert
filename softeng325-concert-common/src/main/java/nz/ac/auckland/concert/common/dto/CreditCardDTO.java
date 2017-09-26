@@ -30,11 +30,8 @@ import nz.ac.auckland.concert.common.jaxb.LocalDateTimeAdapter;
 public class CreditCardDTO {
 	
 	public enum Type {Visa, Master};
-	
 	private Type _type;
-	
 	private String _name;
-	
 	private String _number;
 	
 	@XmlJavaTypeAdapter(value=LocalDateTimeAdapter.class)

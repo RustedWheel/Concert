@@ -1,5 +1,6 @@
 package nz.ac.auckland.concert.service.domain;
 
+import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.Convert;

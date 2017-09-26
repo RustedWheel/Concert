@@ -38,24 +38,16 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
  *
  */
 
-@XmlRootElement(name="concertDTO")
+@XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
 public class ConcertDTO {
 
-	@XmlAttribute(name="id")
 	private Long _id;
-	
-	@XmlElement(name="title")
 	private String _title;
 	
-	@XmlElement(name="dates")
 	@XmlJavaTypeAdapter(value=LocalDateTimeAdapter.class)
 	private Set<LocalDateTime> _dates;
-	
-	@XmlElement(name="tariff")
 	private Map<PriceBand, BigDecimal> _tariff;
-	
-	@XmlElement(name="performerIds")
 	private Set<Long> _performerIds;
 
 	public ConcertDTO() {

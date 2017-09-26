@@ -20,20 +20,13 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
  *
  */
 
-@XmlRootElement(name="userDTO")
+@XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
 public class UserDTO {
 
-	@XmlAttribute(name="username")
 	private String _username;
-	
-	@XmlElement(name="password")
 	private String _password;
-	
-	@XmlElement(name="firstname")
 	private String _firstname;
-	
-	@XmlElement(name="lastname")
 	private String _lastname;
 	
 	protected UserDTO() {}

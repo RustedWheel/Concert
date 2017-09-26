@@ -23,17 +23,12 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
  *
  */
 
-@XmlRootElement(name="newsItemDTO")
+@XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
 public class NewsItemDTO {
 
-	@XmlAttribute(name="id")
 	private Long _id;
-	
-	@XmlElement(name="timestamp")
 	private LocalDateTime _timestamp;
-	
-	@XmlElement(name="content")
 	private String _content;
 	
 	public NewsItemDTO() {}

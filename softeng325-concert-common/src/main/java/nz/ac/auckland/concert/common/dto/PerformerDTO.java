@@ -28,23 +28,14 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
  *             
  */
 
-@XmlRootElement(name="performerDTO")
+@XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
 public class PerformerDTO {
 	
-	@XmlAttribute(name="id")
 	private Long _id;
-	
-	@XmlElement(name="name")
 	private String _name;
-	
-	@XmlElement(name="imageName")
 	private String _imageName;
-	
-	@XmlElement(name="genre")
 	private Genre _genre;
-	
-	@XmlElement(name="concertIds")
 	private Set<Long> _concertIds;
 	
 	public PerformerDTO() {}

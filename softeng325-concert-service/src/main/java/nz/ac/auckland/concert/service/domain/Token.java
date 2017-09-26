@@ -1,14 +1,8 @@
 package nz.ac.auckland.concert.service.domain;
 
-import java.io.Serializable;
-import java.util.Set;
-
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
-import javax.persistence.Embeddable;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
@@ -30,7 +24,7 @@ public class Token{
 	@Column(name = "TOKEN_KEY")
 	private String _tokenKey;
 	
-	@OneToOne(fetch=FetchType.EAGER)
+	@OneToOne
 	@JoinColumn(name="USER",unique=true )
 	private User _user;
 	
