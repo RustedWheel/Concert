@@ -55,7 +55,7 @@ public class DefaultService implements ConcertService {
 	private static String NEWS_SERVICE_URI = "http://localhost:10000/services/news";
 
 	// Name of the S3 bucket that stores images.
-	private static final String AWS_BUCKET = "a-little-bit-bucket";
+	private static final String AWS_BUCKET = "";
 
 	private static final String FILE_SEPARATOR = System
 			.getProperty("file.separator");
